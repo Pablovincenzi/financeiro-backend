@@ -1,5 +1,11 @@
 ﻿export function parseCurrencyToNumber(value: string) {
-  return Number.parseFloat(value.replace(/\./g, "").replace(",", "."));
+  const normalized = value.trim();
+
+  if (normalized.includes(",")) {
+    return Number.parseFloat(normalized.replace(/\./g, "").replace(",", "."));
+  }
+
+  return Number.parseFloat(normalized);
 }
 
 export function formatCurrency(value: number | string) {
