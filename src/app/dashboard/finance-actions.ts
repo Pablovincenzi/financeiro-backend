@@ -1,6 +1,7 @@
 ﻿"use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 
 import { requireCurrentUser } from "@/lib/auth";
 import { parseCurrencyToNumber } from "@/lib/format";
@@ -11,8 +12,12 @@ import {
   compraCartaoSchema,
   despesaSchema,
   faturaSchema,
+  pixSchema,
+  recebivelSchema,
   receitaSchema,
 } from "@/lib/validations/finance";
+
+const idSchema = z.coerce.number().int().positive();
 
 function emptyToNull(value?: string) {
   if (!value || !value.trim()) {
@@ -38,15 +43,22 @@ function emptyMoneyToNull(value?: string) {
   return parseCurrencyToNumber(value);
 }
 
+function parseRequiredId(formData: FormData) {
+  return idSchema.parse(formData.get("id"));
+}
+
 function revalidateAllPages() {
   [
     "/dashboard",
+    "/dashboard/relatorios",
     "/dashboard/receitas",
     "/dashboard/despesas",
     "/dashboard/contas-fixas",
     "/dashboard/cartoes",
     "/dashboard/compras-cartao",
     "/dashboard/faturas",
+    "/dashboard/pix",
+    "/dashboard/recebiveis",
   ].forEach((path) => revalidatePath(path));
 }
 
@@ -83,8 +95,7 @@ export async function saveReceita(formData: FormData) {
 
 export async function deleteReceita(formData: FormData) {
   const { userId } = await requireCurrentUser();
-  const id = Number(formData.get("id"));
-
+  const id = parseRequiredId(formData);
   await prisma.receita.deleteMany({ where: { id, usuarioId: userId } });
   revalidateAllPages();
 }
@@ -124,8 +135,7 @@ export async function saveDespesa(formData: FormData) {
 
 export async function deleteDespesa(formData: FormData) {
   const { userId } = await requireCurrentUser();
-  const id = Number(formData.get("id"));
-
+  const id = parseRequiredId(formData);
   await prisma.despesa.deleteMany({ where: { id, usuarioId: userId } });
   revalidateAllPages();
 }
@@ -167,8 +177,7 @@ export async function saveContaFixa(formData: FormData) {
 
 export async function deleteContaFixa(formData: FormData) {
   const { userId } = await requireCurrentUser();
-  const id = Number(formData.get("id"));
-
+  const id = parseRequiredId(formData);
   await prisma.contaFixa.deleteMany({ where: { id, usuarioId: userId } });
   revalidateAllPages();
 }
@@ -210,8 +219,7 @@ export async function saveCartao(formData: FormData) {
 
 export async function deleteCartao(formData: FormData) {
   const { userId } = await requireCurrentUser();
-  const id = Number(formData.get("id"));
-
+  const id = parseRequiredId(formData);
   await prisma.cartao.deleteMany({ where: { id, usuarioId: userId } });
   revalidateAllPages();
 }
@@ -229,14 +237,21 @@ export async function saveFatura(formData: FormData) {
     status: formData.get("status"),
   });
 
+  const valorPago = emptyMoneyToNull(parsed.valorPago) ?? 0;
+  const valorTotal = parseCurrencyToNumber(parsed.valorTotal);
+
+  if (valorPago > valorTotal) {
+    throw new Error("Valor pago nao pode ser maior que o valor total da fatura.");
+  }
+
   const data = {
     usuarioId: userId,
     cartaoId: parsed.cartaoId,
     competencia: parsed.competencia,
     dataFechamento: new Date(parsed.dataFechamento),
     dataVencimento: new Date(parsed.dataVencimento),
-    valorTotal: parseCurrencyToNumber(parsed.valorTotal),
-    valorPago: emptyMoneyToNull(parsed.valorPago) ?? 0,
+    valorTotal,
+    valorPago,
     status: parsed.status,
   };
 
@@ -251,8 +266,7 @@ export async function saveFatura(formData: FormData) {
 
 export async function deleteFatura(formData: FormData) {
   const { userId } = await requireCurrentUser();
-  const id = Number(formData.get("id"));
-
+  const id = parseRequiredId(formData);
   await prisma.faturaCartao.deleteMany({ where: { id, usuarioId: userId } });
   revalidateAllPages();
 }
@@ -294,8 +308,89 @@ export async function saveCompraCartao(formData: FormData) {
 
 export async function deleteCompraCartao(formData: FormData) {
   const { userId } = await requireCurrentUser();
-  const id = Number(formData.get("id"));
-
+  const id = parseRequiredId(formData);
   await prisma.compraCartao.deleteMany({ where: { id, usuarioId: userId } });
+  revalidateAllPages();
+}
+
+export async function savePix(formData: FormData) {
+  const { userId } = await requireCurrentUser();
+  const parsed = pixSchema.parse({
+    id: formData.get("id") || undefined,
+    tipo: formData.get("tipo"),
+    valor: formData.get("valor"),
+    dataPix: formData.get("dataPix"),
+    descricao: formData.get("descricao"),
+    conta: formData.get("conta"),
+    categoria: formData.get("categoria"),
+    observacoes: formData.get("observacoes"),
+  });
+
+  const data = {
+    usuarioId: userId,
+    tipo: parsed.tipo,
+    valor: parseCurrencyToNumber(parsed.valor),
+    dataPix: new Date(parsed.dataPix),
+    descricao: parsed.descricao,
+    conta: emptyToNull(parsed.conta),
+    categoria: emptyToNull(parsed.categoria),
+    observacoes: emptyToNull(parsed.observacoes),
+  };
+
+  if (parsed.id) {
+    await prisma.pixTransacao.updateMany({ where: { id: parsed.id, usuarioId: userId }, data });
+  } else {
+    await prisma.pixTransacao.create({ data });
+  }
+
+  revalidateAllPages();
+}
+
+export async function deletePix(formData: FormData) {
+  const { userId } = await requireCurrentUser();
+  const id = parseRequiredId(formData);
+  await prisma.pixTransacao.deleteMany({ where: { id, usuarioId: userId } });
+  revalidateAllPages();
+}
+
+export async function saveRecebivel(formData: FormData) {
+  const { userId } = await requireCurrentUser();
+  const parsed = recebivelSchema.parse({
+    id: formData.get("id") || undefined,
+    descricao: formData.get("descricao"),
+    valorPrevisto: formData.get("valorPrevisto"),
+    dataEsperada: formData.get("dataEsperada"),
+    dataRecebimento: formData.get("dataRecebimento"),
+    origem: formData.get("origem"),
+    categoria: formData.get("categoria"),
+    observacoes: formData.get("observacoes"),
+    status: formData.get("status"),
+  });
+
+  const data = {
+    usuarioId: userId,
+    descricao: parsed.descricao,
+    valorPrevisto: parseCurrencyToNumber(parsed.valorPrevisto),
+    dataEsperada: new Date(parsed.dataEsperada),
+    dataRecebimento: emptyToDate(parsed.dataRecebimento),
+    origem: emptyToNull(parsed.origem),
+    categoria: emptyToNull(parsed.categoria),
+    observacoes: emptyToNull(parsed.observacoes),
+    status: parsed.status,
+  };
+
+  if (parsed.id) {
+    await prisma.recebivel.updateMany({ where: { id: parsed.id, usuarioId: userId }, data });
+  } else {
+    await prisma.recebivel.create({ data });
+  }
+
+  revalidateAllPages();
+}
+
+export async function deleteRecebivel(formData: FormData) {
+  const { userId } = await requireCurrentUser();
+  const id = parseRequiredId(formData);
+  await prisma.recebivel.deleteMany({ where: { id, usuarioId: userId } });
   revalidateAllPages();
 }
