@@ -43,6 +43,7 @@ export const categoriaDespesaSchema = z
   .object({
     id: z.coerce.number().int().positive().optional(),
     nome: z.string().trim().min(3, "Informe o nome da categoria.").max(120),
+    tagId: z.coerce.number().int().positive("Selecione uma tag."),
     dataInicio: dateString("Informe a data de inicio."),
     dataFim: z.string().optional().or(z.literal("")),
     observacoes: optionalText,

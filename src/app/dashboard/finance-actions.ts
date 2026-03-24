@@ -107,20 +107,31 @@ export async function saveCategoriaDespesa(formData: FormData) {
   const parsed = categoriaDespesaSchema.parse({
     id: formData.get("id") || undefined,
     nome: formData.get("nome"),
+    tagId: formData.get("tagId"),
     dataInicio: formData.get("dataInicio"),
     dataFim: formData.get("dataFim"),
     observacoes: formData.get("observacoes"),
     usuariosIds: formData.getAll("usuariosIds"),
   });
 
-  const activeUsers = await prisma.usuario.findMany({
-    where: {
-      ativo: true,
-      id: { in: parsed.usuariosIds },
-      pessoa: { ativo: true },
-    },
-    select: { id: true },
-  });
+  const [activeUsers, tag] = await Promise.all([
+    prisma.usuario.findMany({
+      where: {
+        ativo: true,
+        id: { in: parsed.usuariosIds },
+        pessoa: { ativo: true },
+      },
+      select: { id: true },
+    }),
+    prisma.tag.findUnique({
+      where: { id: parsed.tagId },
+      select: { id: true },
+    }),
+  ]);
+
+  if (!tag) {
+    throw new Error("Selecione uma tag valida para a categoria.");
+  }
 
   if (activeUsers.length !== parsed.usuariosIds.length) {
     throw new Error("Selecione apenas usuarios ativos para a categoria.");
@@ -128,6 +139,7 @@ export async function saveCategoriaDespesa(formData: FormData) {
 
   const data = {
     nome: parsed.nome,
+    tagId: parsed.tagId,
     dataInicio: new Date(parsed.dataInicio),
     dataFim: emptyToDate(parsed.dataFim),
     observacoes: emptyToNull(parsed.observacoes),

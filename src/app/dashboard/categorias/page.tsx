@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { deleteCategoriaDespesa, saveCategoriaDespesa } from "@/app/dashboard/finance-actions";
+import { UserMultiSelect } from "@/components/dashboard/user-multi-select";
 import { requireCurrentUser } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
@@ -15,7 +16,7 @@ export default async function CategoriasPage({ searchParams }: PageProps) {
   await requireCurrentUser();
   const params = searchParams ? await searchParams : undefined;
 
-  const [usuarios, categorias] = await Promise.all([
+  const [usuarios, tags, categorias] = await Promise.all([
     prisma.usuario.findMany({
       where: {
         ativo: true,
@@ -24,9 +25,11 @@ export default async function CategoriasPage({ searchParams }: PageProps) {
       orderBy: { pessoa: { nomeCompleto: "asc" } },
       include: { pessoa: true },
     }),
+    prisma.tag.findMany(),
     prisma.categoriaDespesa.findMany({
       orderBy: { nome: "asc" },
       include: {
+        tag: true,
         usuarios: {
           include: {
             usuario: {
@@ -50,6 +53,11 @@ export default async function CategoriasPage({ searchParams }: PageProps) {
     : null;
 
   const usuariosSelecionados = categoriaEmEdicao?.usuarios.map((item) => String(item.usuarioId)) ?? [];
+  const orderedTags = [...tags].sort((left, right) => left.nome.localeCompare(right.nome, "pt-BR"));
+  const userOptions = usuarios.map((usuario) => ({
+    id: usuario.id,
+    label: `${usuario.pessoa.nomeCompleto} - ${usuario.login}`,
+  }));
 
   return (
     <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
@@ -82,6 +90,25 @@ export default async function CategoriasPage({ searchParams }: PageProps) {
             />
           </div>
 
+          <div>
+            <label className="mb-2 block text-sm font-medium">Tag</label>
+            <select
+              name="tagId"
+              defaultValue={categoriaEmEdicao?.tagId ?? ""}
+              className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent"
+              required
+            >
+              <option value="" disabled>
+                Selecione uma tag
+              </option>
+              {orderedTags.map((tag) => (
+                <option key={tag.id} value={tag.id}>
+                  {tag.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <label className="mb-2 block text-sm font-medium">Data inicio</label>
@@ -105,21 +132,8 @@ export default async function CategoriasPage({ searchParams }: PageProps) {
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium">Usuarios vinculados</label>
-            <select
-              name="usuariosIds"
-              multiple
-              defaultValue={usuariosSelecionados}
-              className="min-h-56 w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent"
-              required
-            >
-              {usuarios.map((usuario) => (
-                <option key={usuario.id} value={usuario.id}>
-                  {usuario.pessoa.nomeCompleto} - {usuario.login}
-                </option>
-              ))}
-            </select>
-            <p className="mt-2 text-xs text-muted">Use Ctrl ou Cmd para selecionar mais de um usuario.</p>
+            <label className="mb-2 block text-sm font-medium">Usuarios com acesso</label>
+            <UserMultiSelect name="usuariosIds" options={userOptions} defaultSelectedIds={usuariosSelecionados} />
           </div>
 
           <div>
@@ -156,10 +170,17 @@ export default async function CategoriasPage({ searchParams }: PageProps) {
               <div key={categoria.id} className="rounded-2xl border border-border px-4 py-4">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                   <div>
-                    <h3 className="text-lg font-semibold">{categoria.nome}</h3>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-lg font-semibold">{categoria.nome}</h3>
+                      {categoria.tag ? (
+                        <span className="rounded-full bg-surface-strong px-3 py-1 text-xs font-medium text-muted">
+                          Tag: {categoria.tag.nome}
+                        </span>
+                      ) : null}
+                    </div>
                     <p className="mt-1 text-sm text-muted">
                       Inicio em {formatDate(categoria.dataInicio)}
-                      {categoria.dataFim ? ` · fim em ${formatDate(categoria.dataFim)}` : " · sem data fim"}
+                      {categoria.dataFim ? ` - fim em ${formatDate(categoria.dataFim)}` : " - sem data fim"}
                     </p>
                     <p className="mt-1 text-sm text-muted">
                       Usuarios: {categoria.usuarios.map((item) => item.usuario.pessoa.nomeCompleto).join(", ")}
