@@ -50,6 +50,7 @@ model Usuario {
 model CategoriaDespesa {
   id            Int                      @id @default(autoincrement()) @db.Integer
   nome          String                   @unique @db.VarChar(120)
+  tagId         Int?                     @map("tag_id") @db.Integer
   dataInicio    DateTime                 @map("data_inicio") @db.Date
   dataFim       DateTime?                @map("data_fim") @db.Date
   observacoes   String?                  @db.Text
@@ -57,6 +58,7 @@ model CategoriaDespesa {
   updatedAt     DateTime                 @updatedAt @map("updated_at") @db.Timestamp(6)
   despesas      Despesa[]
   usuarios      CategoriaDespesaUsuario[]
+  tag           Tag?                     @relation(fields: [tagId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   @@map("categorias_despesa")
 }
@@ -71,6 +73,16 @@ model CategoriaDespesaUsuario {
 
   @@unique([categoriaId, usuarioId])
   @@map("categorias_despesa_usuarios")
+}
+
+model Tag {
+  id                Int                @id @default(autoincrement()) @db.Integer
+  nome              String             @unique @db.VarChar(80)
+  createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt         DateTime           @updatedAt @map("updated_at") @db.Timestamp(6)
+  categoriasDespesa CategoriaDespesa[]
+
+  @@map("tb_tag")
 }
 
 model Receita {

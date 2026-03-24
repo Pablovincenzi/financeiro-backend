@@ -6,22 +6,38 @@ describe("finance validations", () => {
   it("aceita payload valido de categoria de despesa", () => {
     const parsed = categoriaDespesaSchema.parse({
       nome: "Apartamento",
+      tagId: 1,
       dataInicio: "2026-03-24",
       dataFim: "2026-12-31",
       observacoes: "Categoria principal de moradia",
       usuariosIds: [1, 3],
     });
 
+    expect(parsed.tagId).toBe(1);
     expect(parsed.usuariosIds).toHaveLength(2);
   });
 
   it("rejeita categoria sem usuarios", () => {
     const result = categoriaDespesaSchema.safeParse({
       nome: "Apartamento",
+      tagId: 1,
       dataInicio: "2026-03-24",
       dataFim: "",
       observacoes: "",
       usuariosIds: [],
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejeita categoria sem tag", () => {
+    const result = categoriaDespesaSchema.safeParse({
+      nome: "Apartamento",
+      tagId: "",
+      dataInicio: "2026-03-24",
+      dataFim: "",
+      observacoes: "",
+      usuariosIds: [1],
     });
 
     expect(result.success).toBe(false);
