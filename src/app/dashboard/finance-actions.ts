@@ -1,4 +1,4 @@
-﻿"use server";
+"use server";
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -8,6 +8,7 @@ import { parseCurrencyToNumber } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import {
   cartaoSchema,
+  categoriaDespesaSchema,
   contaFixaSchema,
   compraCartaoSchema,
   despesaSchema,
@@ -53,6 +54,7 @@ function revalidateAllPages() {
     "/dashboard/relatorios",
     "/dashboard/receitas",
     "/dashboard/despesas",
+    "/dashboard/categorias",
     "/dashboard/contas-fixas",
     "/dashboard/cartoes",
     "/dashboard/compras-cartao",
@@ -100,6 +102,75 @@ export async function deleteReceita(formData: FormData) {
   revalidateAllPages();
 }
 
+export async function saveCategoriaDespesa(formData: FormData) {
+  await requireCurrentUser();
+  const parsed = categoriaDespesaSchema.parse({
+    id: formData.get("id") || undefined,
+    nome: formData.get("nome"),
+    dataInicio: formData.get("dataInicio"),
+    dataFim: formData.get("dataFim"),
+    observacoes: formData.get("observacoes"),
+    usuariosIds: formData.getAll("usuariosIds"),
+  });
+
+  const activeUsers = await prisma.usuario.findMany({
+    where: {
+      ativo: true,
+      id: { in: parsed.usuariosIds },
+      pessoa: { ativo: true },
+    },
+    select: { id: true },
+  });
+
+  if (activeUsers.length !== parsed.usuariosIds.length) {
+    throw new Error("Selecione apenas usuarios ativos para a categoria.");
+  }
+
+  const data = {
+    nome: parsed.nome,
+    dataInicio: new Date(parsed.dataInicio),
+    dataFim: emptyToDate(parsed.dataFim),
+    observacoes: emptyToNull(parsed.observacoes),
+  };
+
+  if (parsed.id) {
+    await prisma.$transaction(async (tx) => {
+      await tx.categoriaDespesa.update({
+        where: { id: parsed.id },
+        data,
+      });
+
+      await tx.categoriaDespesaUsuario.deleteMany({ where: { categoriaId: parsed.id } });
+      await tx.categoriaDespesaUsuario.createMany({
+        data: parsed.usuariosIds.map((usuarioId) => ({ categoriaId: parsed.id!, usuarioId })),
+      });
+    });
+  } else {
+    await prisma.$transaction(async (tx) => {
+      const categoria = await tx.categoriaDespesa.create({ data, select: { id: true } });
+      await tx.categoriaDespesaUsuario.createMany({
+        data: parsed.usuariosIds.map((usuarioId) => ({ categoriaId: categoria.id, usuarioId })),
+      });
+    });
+  }
+
+  revalidateAllPages();
+}
+
+export async function deleteCategoriaDespesa(formData: FormData) {
+  await requireCurrentUser();
+  const id = parseRequiredId(formData);
+
+  const totalDespesas = await prisma.despesa.count({ where: { categoriaDespesaId: id } });
+
+  if (totalDespesas > 0) {
+    throw new Error("Nao e possivel excluir uma categoria que ja esta vinculada a despesas.");
+  }
+
+  await prisma.categoriaDespesa.delete({ where: { id } });
+  revalidateAllPages();
+}
+
 export async function saveDespesa(formData: FormData) {
   const { userId } = await requireCurrentUser();
   const parsed = despesaSchema.parse({
@@ -108,18 +179,34 @@ export async function saveDespesa(formData: FormData) {
     valor: formData.get("valor"),
     dataVencimento: formData.get("dataVencimento"),
     dataPagamento: formData.get("dataPagamento"),
-    categoria: formData.get("categoria"),
+    categoriaId: formData.get("categoriaId"),
     observacoes: formData.get("observacoes"),
     status: formData.get("status"),
   });
 
+  const categoriaPermitida = await prisma.categoriaDespesa.findFirst({
+    where: {
+      id: parsed.categoriaId,
+      usuarios: {
+        some: {
+          usuarioId: userId,
+        },
+      },
+    },
+    select: { id: true },
+  });
+
+  if (!categoriaPermitida) {
+    throw new Error("Selecione uma categoria vinculada ao usuario atual.");
+  }
+
   const data = {
     usuarioId: userId,
+    categoriaDespesaId: parsed.categoriaId,
     descricao: parsed.descricao,
     valor: parseCurrencyToNumber(parsed.valor),
     dataVencimento: new Date(parsed.dataVencimento),
     dataPagamento: emptyToDate(parsed.dataPagamento),
-    categoria: emptyToNull(parsed.categoria),
     observacoes: emptyToNull(parsed.observacoes),
     status: parsed.status,
   };

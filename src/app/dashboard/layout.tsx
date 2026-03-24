@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
@@ -16,6 +16,7 @@ const links = [
   { href: "/dashboard/relatorios", label: "Relatorios" },
   { href: "/dashboard/receitas", label: "Receitas" },
   { href: "/dashboard/despesas", label: "Despesas" },
+  { href: "/dashboard/categorias", label: "Categorias" },
   { href: "/dashboard/contas-fixas", label: "Contas fixas" },
   { href: "/dashboard/cartoes", label: "Cartoes" },
   { href: "/dashboard/compras-cartao", label: "Compras" },

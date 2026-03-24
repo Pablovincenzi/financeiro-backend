@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 
 import { deleteDespesa, saveDespesa } from "@/app/dashboard/finance-actions";
 import { requireCurrentUser } from "@/lib/auth";
@@ -15,10 +15,23 @@ export default async function DespesasPage({ searchParams }: PageProps) {
   const { userId } = await requireCurrentUser();
   const params = searchParams ? await searchParams : undefined;
 
-  const despesas = await prisma.despesa.findMany({
-    where: { usuarioId: userId },
-    orderBy: { dataVencimento: "asc" },
-  });
+  const [despesas, categorias] = await Promise.all([
+    prisma.despesa.findMany({
+      where: { usuarioId: userId },
+      orderBy: { dataVencimento: "asc" },
+      include: { categoriaDespesa: true },
+    }),
+    prisma.categoriaDespesa.findMany({
+      where: {
+        usuarios: {
+          some: {
+            usuarioId: userId,
+          },
+        },
+      },
+      orderBy: { nome: "asc" },
+    }),
+  ]);
 
   const despesaEmEdicao = params?.edit
     ? despesas.find((item) => item.id === Number(params.edit))
@@ -76,7 +89,22 @@ export default async function DespesasPage({ searchParams }: PageProps) {
 
           <div>
             <label className="mb-2 block text-sm font-medium">Categoria</label>
-            <input name="categoria" defaultValue={despesaEmEdicao?.categoria ?? ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" placeholder="Moradia" />
+            <select
+              name="categoriaId"
+              defaultValue={despesaEmEdicao?.categoriaDespesaId ?? ""}
+              className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent"
+              required
+            >
+              <option value="" disabled>Selecione uma categoria</option>
+              {categorias.map((categoria) => (
+                <option key={categoria.id} value={categoria.id}>
+                  {categoria.nome}
+                </option>
+              ))}
+            </select>
+            <p className="mt-2 text-xs text-muted">
+              Cadastre novas categorias em <Link href="/dashboard/categorias" className="text-accent">Categorias</Link>.
+            </p>
           </div>
 
           <div>
@@ -111,7 +139,7 @@ export default async function DespesasPage({ searchParams }: PageProps) {
                   <div>
                     <h3 className="text-lg font-semibold">{despesa.descricao}</h3>
                     <p className="mt-1 text-sm text-muted">
-                      {despesa.categoria ?? "Sem categoria"} · vence em {formatDate(despesa.dataVencimento)} · {despesa.status}
+                      {despesa.categoriaDespesa.nome} · vence em {formatDate(despesa.dataVencimento)} · {despesa.status}
                     </p>
                     {despesa.dataPagamento ? (
                       <p className="mt-1 text-sm text-muted">Pago em {formatDate(despesa.dataPagamento)}</p>
@@ -143,4 +171,3 @@ export default async function DespesasPage({ searchParams }: PageProps) {
     </section>
   );
 }
-

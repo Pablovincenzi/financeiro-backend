@@ -1,4 +1,4 @@
-﻿import { z } from "zod";
+import { z } from "zod";
 
 const moneyMessage = "Informe um valor monetario valido.";
 
@@ -34,10 +34,24 @@ export const despesaSchema = z.object({
   valor: currencyString,
   dataVencimento: dateString("Informe a data de vencimento."),
   dataPagamento: z.string().optional().or(z.literal("")),
-  categoria: optionalCategory,
+  categoriaId: z.coerce.number().int().positive("Selecione uma categoria."),
   observacoes: optionalText,
   status: z.enum(["pendente", "paga"]).default("pendente"),
 });
+
+export const categoriaDespesaSchema = z
+  .object({
+    id: z.coerce.number().int().positive().optional(),
+    nome: z.string().trim().min(3, "Informe o nome da categoria.").max(120),
+    dataInicio: dateString("Informe a data de inicio."),
+    dataFim: z.string().optional().or(z.literal("")),
+    observacoes: optionalText,
+    usuariosIds: z.array(z.coerce.number().int().positive()).min(1, "Selecione ao menos um usuario."),
+  })
+  .refine((data) => !data.dataFim || new Date(data.dataFim) >= new Date(data.dataInicio), {
+    message: "A data fim deve ser maior ou igual a data inicio.",
+    path: ["dataFim"],
+  });
 
 export const contaFixaSchema = z.object({
   id: z.coerce.number().int().positive().optional(),
@@ -111,6 +125,7 @@ export const recebivelSchema = z.object({
 
 export type ReceitaInput = z.infer<typeof receitaSchema>;
 export type DespesaInput = z.infer<typeof despesaSchema>;
+export type CategoriaDespesaInput = z.infer<typeof categoriaDespesaSchema>;
 export type ContaFixaInput = z.infer<typeof contaFixaSchema>;
 export type CartaoInput = z.infer<typeof cartaoSchema>;
 export type FaturaInput = z.infer<typeof faturaSchema>;

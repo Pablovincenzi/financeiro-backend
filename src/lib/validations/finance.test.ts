@@ -1,8 +1,60 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { faturaSchema, pixSchema, recebivelSchema } from "@/lib/validations/finance";
+import { categoriaDespesaSchema, despesaSchema, faturaSchema, pixSchema, recebivelSchema } from "@/lib/validations/finance";
 
 describe("finance validations", () => {
+  it("aceita payload valido de categoria de despesa", () => {
+    const parsed = categoriaDespesaSchema.parse({
+      nome: "Apartamento",
+      dataInicio: "2026-03-24",
+      dataFim: "2026-12-31",
+      observacoes: "Categoria principal de moradia",
+      usuariosIds: [1, 3],
+    });
+
+    expect(parsed.usuariosIds).toHaveLength(2);
+  });
+
+  it("rejeita categoria sem usuarios", () => {
+    const result = categoriaDespesaSchema.safeParse({
+      nome: "Apartamento",
+      dataInicio: "2026-03-24",
+      dataFim: "",
+      observacoes: "",
+      usuariosIds: [],
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("aceita payload valido de despesa com categoria obrigatoria", () => {
+    const parsed = despesaSchema.parse({
+      descricao: "Aluguel",
+      valor: "1500.00",
+      dataVencimento: "2026-03-24",
+      dataPagamento: "",
+      categoriaId: 1,
+      observacoes: "",
+      status: "pendente",
+    });
+
+    expect(parsed.categoriaId).toBe(1);
+  });
+
+  it("rejeita despesa sem categoria", () => {
+    const result = despesaSchema.safeParse({
+      descricao: "Aluguel",
+      valor: "1500.00",
+      dataVencimento: "2026-03-24",
+      dataPagamento: "",
+      categoriaId: "",
+      observacoes: "",
+      status: "pendente",
+    });
+
+    expect(result.success).toBe(false);
+  });
+
   it("aceita payload valido de PIX", () => {
     const parsed = pixSchema.parse({
       tipo: "recebido",

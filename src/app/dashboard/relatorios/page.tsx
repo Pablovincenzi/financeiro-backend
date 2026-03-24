@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 
 import { requireCurrentUser } from "@/lib/auth";
 import {
@@ -21,11 +21,11 @@ type GroupItem = {
   count: number;
 };
 
-function groupByCategory<T extends { categoria: string | null; valor?: unknown; valorPrevisto?: unknown }>(items: T[]) {
+function groupByCategory<T extends { categoriaLabel: string; valor?: unknown; valorPrevisto?: unknown }>(items: T[]) {
   const grouped = new Map<string, GroupItem>();
 
   items.forEach((item) => {
-    const label = item.categoria ?? "Sem categoria";
+    const label = item.categoriaLabel;
     const current = grouped.get(label) ?? { label, total: 0, count: 0 };
     const amount = "valor" in item && item.valor != null ? Number(item.valor) : Number(item.valorPrevisto ?? 0);
 
@@ -46,7 +46,7 @@ export default async function RelatoriosPage({ searchParams }: PageProps) {
 
   const [receitas, despesas, pix, recebiveis, compras, contasFixas, faturas] = await Promise.all([
     prisma.receita.findMany({ where: { usuarioId: userId, dataRecebimento: { gte: start, lte: end } }, orderBy: { dataRecebimento: "desc" } }),
-    prisma.despesa.findMany({ where: { usuarioId: userId, dataVencimento: { gte: start, lte: end } }, orderBy: { dataVencimento: "asc" } }),
+    prisma.despesa.findMany({ where: { usuarioId: userId, dataVencimento: { gte: start, lte: end } }, orderBy: { dataVencimento: "asc" }, include: { categoriaDespesa: true } }),
     prisma.pixTransacao.findMany({ where: { usuarioId: userId, dataPix: { gte: start, lte: end } }, orderBy: { dataPix: "desc" } }),
     prisma.recebivel.findMany({ where: { usuarioId: userId, dataEsperada: { gte: start, lte: end } }, orderBy: { dataEsperada: "asc" } }),
     prisma.compraCartao.findMany({ where: { usuarioId: userId, dataCompra: { gte: start, lte: end } }, orderBy: { dataCompra: "desc" }, include: { cartao: true } }),
@@ -54,8 +54,8 @@ export default async function RelatoriosPage({ searchParams }: PageProps) {
     prisma.faturaCartao.findMany({ where: { usuarioId: userId, dataVencimento: { gte: start, lte: end } }, include: { cartao: true }, orderBy: { dataVencimento: "asc" } }),
   ]);
 
-  const receitasPorCategoria = groupByCategory(receitas);
-  const despesasPorCategoria = groupByCategory(despesas);
+  const receitasPorCategoria = groupByCategory(receitas.map((item) => ({ ...item, categoriaLabel: item.categoria ?? "Sem categoria" })));
+  const despesasPorCategoria = groupByCategory(despesas.map((item) => ({ ...item, categoriaLabel: item.categoriaDespesa.nome })));
   const pixRecebidos = pix.filter((item) => item.tipo === "recebido");
   const pixEnviados = pix.filter((item) => item.tipo === "enviado");
 
