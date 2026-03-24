@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signIn } from "next-auth/react";
@@ -57,12 +57,10 @@ export function SignInForm() {
           type="text"
           autoComplete="username"
           className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition focus:border-accent"
-          placeholder="seu.login"
+          placeholder="admin@financeiro.local"
           {...register("login")}
         />
-        {errors.login ? (
-          <p className="text-sm text-red-700">{errors.login.message}</p>
-        ) : null}
+        {errors.login ? <p className="text-sm text-red-700">{errors.login.message}</p> : null}
       </div>
 
       <div className="space-y-2">
@@ -74,12 +72,10 @@ export function SignInForm() {
           type="password"
           autoComplete="current-password"
           className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition focus:border-accent"
-          placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+          placeholder="Digite sua senha"
           {...register("password")}
         />
-        {errors.password ? (
-          <p className="text-sm text-red-700">{errors.password.message}</p>
-        ) : null}
+        {errors.password ? <p className="text-sm text-red-700">{errors.password.message}</p> : null}
       </div>
 
       {formError ? <p className="text-sm text-red-700">{formError}</p> : null}
@@ -92,20 +88,16 @@ export function SignInForm() {
         {isSubmitting ? "Entrando..." : "Entrar"}
       </button>
 
-      <p className="text-sm text-muted">
-        Estrutura inicial pronta para autenticaÃ§Ã£o por credenciais com usuÃ¡rio vinculado a pessoa.
-      </p>
-
-      <p className="text-sm text-muted">
-        Primeiro acesso:
-        {" "}
-        ajuste o banco e crie um usuÃ¡rio inicial antes de testar o login.
-      </p>
-
-      <Link className="inline-flex text-sm font-medium text-accent" href="https://next-auth.js.org">
-        ReferÃªncia da autenticaÃ§Ã£o
+      <Link
+        className="inline-flex w-full items-center justify-center rounded-2xl border border-border px-4 py-3 text-sm font-semibold text-foreground transition hover:border-accent hover:text-accent"
+        href="/cadastro"
+      >
+        Cadastrar
       </Link>
+
+      <p className="text-sm leading-6 text-muted">
+        Entre com seu email e senha para acessar o painel financeiro.
+      </p>
     </form>
   );
 }
-

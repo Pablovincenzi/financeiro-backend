@@ -10,7 +10,7 @@ datasource db {
 model Pessoa {
   id             Int       @id @default(autoincrement()) @db.Integer
   nomeCompleto   String    @map("nome_completo") @db.VarChar(150)
-  cpf            String    @unique @db.VarChar(14)
+  cpf            String?   @unique @db.VarChar(14)
   dataNascimento DateTime? @map("data_nascimento") @db.Date
   telefone       String?   @db.VarChar(20)
   email          String?   @db.VarChar(150)
