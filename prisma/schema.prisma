@@ -1,0 +1,156 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Pessoa {
+  id             Int       @id @default(autoincrement()) @db.Integer
+  nomeCompleto   String    @map("nome_completo") @db.VarChar(150)
+  cpf            String    @unique @db.VarChar(14)
+  dataNascimento DateTime? @map("data_nascimento") @db.Date
+  telefone       String?   @db.VarChar(20)
+  email          String?   @db.VarChar(150)
+  ativo          Boolean   @default(true)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamp(6)
+  usuario        Usuario?
+
+  @@map("pessoas")
+}
+
+model Usuario {
+  id            Int           @id @default(autoincrement()) @db.Integer
+  pessoaId      Int           @unique @map("pessoa_id") @db.Integer
+  login         String        @unique @db.VarChar(80)
+  emailLogin    String        @unique @map("email_login") @db.VarChar(150)
+  senhaHash     String        @map("senha_hash") @db.VarChar(255)
+  nivelAcesso   String        @default("usuario") @map("nivel_acesso") @db.VarChar(20)
+  ultimoLoginEm DateTime?     @map("ultimo_login_em") @db.Timestamp(6)
+  ativo         Boolean       @default(true)
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt     DateTime      @updatedAt @map("updated_at") @db.Timestamp(6)
+  pessoa        Pessoa        @relation(fields: [pessoaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  receitas      Receita[]
+  despesas      Despesa[]
+  contasFixas   ContaFixa[]
+  cartoes       Cartao[]
+  faturas       FaturaCartao[]
+  compras       CompraCartao[]
+
+  @@map("usuarios")
+}
+
+model Receita {
+  id              Int      @id @default(autoincrement()) @db.Integer
+  usuarioId       Int      @map("usuario_id") @db.Integer
+  descricao       String   @db.VarChar(150)
+  valor           Decimal  @db.Decimal(14, 2)
+  dataRecebimento DateTime @map("data_recebimento") @db.Date
+  categoria       String?  @db.VarChar(80)
+  observacoes     String?  @db.Text
+  status          String   @default("prevista") @db.VarChar(20)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamp(6)
+  usuario         Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("receitas")
+}
+
+model Despesa {
+  id             Int       @id @default(autoincrement()) @db.Integer
+  usuarioId      Int       @map("usuario_id") @db.Integer
+  descricao      String    @db.VarChar(150)
+  valor          Decimal   @db.Decimal(14, 2)
+  dataVencimento DateTime  @map("data_vencimento") @db.Date
+  dataPagamento  DateTime? @map("data_pagamento") @db.Date
+  categoria      String?   @db.VarChar(80)
+  observacoes    String?   @db.Text
+  status         String    @default("pendente") @db.VarChar(20)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamp(6)
+  usuario        Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("despesas")
+}
+
+model ContaFixa {
+  id                Int       @id @default(autoincrement()) @db.Integer
+  usuarioId         Int       @map("usuario_id") @db.Integer
+  descricao         String    @db.VarChar(150)
+  valorPrevisto     Decimal   @map("valor_previsto") @db.Decimal(14, 2)
+  diaVencimento     Int       @map("dia_vencimento") @db.Integer
+  categoria         String?   @db.VarChar(80)
+  periodicidade     String    @default("mensal") @db.VarChar(20)
+  proximoVencimento DateTime? @map("proximo_vencimento") @db.Date
+  observacoes       String?   @db.Text
+  ativa             Boolean   @default(true)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamp(6)
+  usuario           Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("contas_fixas")
+}
+
+model Cartao {
+  id             Int            @id @default(autoincrement()) @db.Integer
+  usuarioId      Int            @map("usuario_id") @db.Integer
+  nome           String         @db.VarChar(120)
+  bandeira       String?        @db.VarChar(50)
+  apelido        String?        @db.VarChar(80)
+  ultimosDigitos String         @map("ultimos_digitos") @db.VarChar(4)
+  limite         Decimal?       @db.Decimal(14, 2)
+  diaFechamento  Int            @map("dia_fechamento") @db.Integer
+  diaVencimento  Int            @map("dia_vencimento") @db.Integer
+  ativo          Boolean        @default(true)
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamp(6)
+  usuario        Usuario        @relation(fields: [usuarioId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  faturas        FaturaCartao[]
+  compras        CompraCartao[]
+
+  @@map("cartoes")
+}
+
+model FaturaCartao {
+  id             Int           @id @default(autoincrement()) @db.Integer
+  usuarioId      Int           @map("usuario_id") @db.Integer
+  cartaoId       Int           @map("cartao_id") @db.Integer
+  competencia    String        @db.VarChar(7)
+  dataFechamento DateTime      @map("data_fechamento") @db.Date
+  dataVencimento DateTime      @map("data_vencimento") @db.Date
+  valorTotal     Decimal       @map("valor_total") @db.Decimal(14, 2)
+  valorPago      Decimal       @map("valor_pago") @default(0) @db.Decimal(14, 2)
+  status         String        @default("aberta") @db.VarChar(20)
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt      DateTime      @updatedAt @map("updated_at") @db.Timestamp(6)
+  usuario        Usuario       @relation(fields: [usuarioId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  cartao         Cartao        @relation(fields: [cartaoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  compras        CompraCartao[]
+
+  @@unique([cartaoId, competencia])
+  @@map("faturas_cartao")
+}
+
+model CompraCartao {
+  id            Int           @id @default(autoincrement()) @db.Integer
+  usuarioId     Int           @map("usuario_id") @db.Integer
+  cartaoId      Int           @map("cartao_id") @db.Integer
+  faturaId      Int?          @map("fatura_id") @db.Integer
+  descricao     String        @db.VarChar(150)
+  valor         Decimal       @db.Decimal(14, 2)
+  dataCompra    DateTime      @map("data_compra") @db.Date
+  categoria     String?       @db.VarChar(80)
+  observacoes   String?       @db.Text
+  status        String        @default("lancada") @db.VarChar(20)
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt     DateTime      @updatedAt @map("updated_at") @db.Timestamp(6)
+  usuario       Usuario       @relation(fields: [usuarioId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  cartao        Cartao        @relation(fields: [cartaoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  fatura        FaturaCartao? @relation(fields: [faturaId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@map("compras_cartao")
+}
