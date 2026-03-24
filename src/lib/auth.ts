@@ -1,4 +1,4 @@
-﻿import { compare } from "bcryptjs";
+import { compare } from "bcryptjs";
 import type { NextAuthOptions } from "next-auth";
 import { getServerSession } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -10,6 +10,7 @@ import { signInSchema } from "@/lib/validations/auth";
 void env;
 
 export const authOptions: NextAuthOptions = {
+  secret: env.AUTH_SECRET,
   session: {
     strategy: "jwt",
     maxAge: 60 * 60 * 8,

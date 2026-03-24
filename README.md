@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Financeiro
 
-## Getting Started
+Aplicacao web de controle financeiro pessoal construida com Next.js, Prisma e PostgreSQL.
 
-First, run the development server:
+## Stack
+
+- Next.js 16
+- TypeScript
+- Prisma ORM
+- PostgreSQL
+- NextAuth com login por credenciais
+
+## Ambiente local
+
+1. Instale as dependencias:
+
+```bash
+npm install
+```
+
+2. Crie seu arquivo `.env` a partir de `.env.example`.
+
+3. Gere o client do Prisma:
+
+```bash
+npm run db:generate
+```
+
+4. Rode a aplicacao:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Variaveis de ambiente
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+As variaveis minimas para a aplicacao funcionar sao:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `DATABASE_URL`
+- `AUTH_SECRET`
 
-## Learn More
+### Regras
 
-To learn more about Next.js, take a look at the following resources:
+- `DATABASE_URL` deve apontar para um PostgreSQL valido
+- `AUTH_SECRET` deve ter pelo menos 32 caracteres
+- em producao, nao usar `localhost` no banco
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Build local
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Para validar o projeto antes de publicar:
 
-## Deploy on Vercel
+```bash
+npm test
+npm run lint
+npx tsc --noEmit
+npm run build
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deploy
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+O plano atual de publicacao usa:
+
+- Vercel para a aplicacao
+- Neon PostgreSQL para o banco
+
+O passo a passo detalhado esta em [docs/deploy-vercel-neon.md](/D:/Pessoal1/Projeto/financeiro/docs/deploy-vercel-neon.md).
+O roteiro especifico da configuracao na Vercel esta em [docs/etapa-13-vercel.md](/D:/Pessoal1/Projeto/financeiro/docs/etapa-13-vercel.md).

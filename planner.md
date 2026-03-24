@@ -337,3 +337,196 @@ Transformar este plano em um documento de arquitetura inicial contendo:
 - fluxo de telas
 - backlog inicial
 - sprints de implementacao
+
+## Roadmap de publicacao web
+
+### Objetivo
+
+Publicar a aplicacao na web com ambiente de producao acessivel por navegador, banco PostgreSQL hospedado e fluxo seguro de deploy.
+
+### Estrategia recomendada
+
+- **Aplicacao web:** Vercel
+- **Banco de dados de producao:** PostgreSQL gerenciado em nuvem
+- **Deploy de producao:** branch `main`
+- **Deploy de homologacao futura:** branch `develop`, se quisermos depois
+
+### Premissas importantes
+
+- o banco local `localhost` nao serve para producao web
+- a aplicacao precisa de `DATABASE_URL` publica/privada de nuvem
+- o projeto usa Next.js com renderizacao no servidor e Prisma, portanto nao deve ser publicado como site estatico
+- a branch `main` sera nossa referencia de producao
+
+## Etapas de publicacao
+
+### Etapa 10 - Escolher e provisionar infraestrutura de producao
+
+Objetivo:
+
+Definir onde a aplicacao e o banco vao rodar.
+
+Entregas:
+
+- escolher provedor do banco PostgreSQL
+- criar instancia de banco de producao
+- obter `DATABASE_URL` de producao
+- definir se o deploy sera apenas producao ou tambem homologacao
+
+Sugestao:
+
+- Vercel para aplicacao
+- Neon, Supabase, Railway ou Render para PostgreSQL
+
+### Etapa 11 - Preparar ambiente para deploy
+
+Objetivo:
+
+Garantir que o projeto esteja pronto para rodar fora do ambiente local.
+
+Entregas:
+
+- revisar variaveis de ambiente obrigatorias
+- validar `AUTH_SECRET` forte para producao
+- revisar configuracao do Prisma para producao
+- confirmar que `npm run build` passa localmente
+- validar que o `script_inicial.sql` cria a estrutura esperada no banco
+
+Variaveis minimas esperadas:
+
+- `DATABASE_URL`
+- `AUTH_SECRET`
+
+### Etapa 12 - Criar banco de producao e aplicar estrutura inicial
+
+Objetivo:
+
+Subir a estrutura do banco fora do ambiente local.
+
+Entregas:
+
+- conectar no banco PostgreSQL hospedado
+- criar schema inicial do sistema
+- validar tabelas principais
+- criar usuario administrador inicial de producao
+- testar leitura e escrita basica no banco remoto
+
+Observacao:
+
+- essa etapa deve ser feita com cuidado para nao misturar dados locais e dados de producao
+
+### Etapa 13 - Configurar projeto na Vercel
+
+Objetivo:
+
+Conectar o repositorio ao servico de hospedagem da aplicacao.
+
+Entregas:
+
+- importar repositorio GitHub na Vercel
+- configurar branch `main` como producao
+- cadastrar variaveis de ambiente de producao
+- validar build na infraestrutura da Vercel
+
+### Etapa 14 - Primeiro deploy publico
+
+Objetivo:
+
+Publicar a primeira versao acessivel na web.
+
+Entregas:
+
+- gerar URL publica da aplicacao
+- validar tela de login online
+- validar autenticacao com usuario de producao
+- validar dashboard e consultas principais
+- validar cadastro de receitas, despesas e categorias
+
+### Etapa 15 - Pos-deploy e endurecimento de producao
+
+Objetivo:
+
+Reduzir risco operacional apos a primeira publicacao.
+
+Entregas:
+
+- revisar logs de aplicacao
+- revisar erros de build ou runtime
+- validar desempenho inicial
+- revisar politica de backup do banco
+- documentar rotina de deploy
+- planejar ambiente de homologacao baseado na `develop`
+
+## Ordem recomendada para execucao da publicacao
+
+10. Escolher e provisionar infraestrutura de producao
+11. Preparar ambiente para deploy
+12. Criar banco de producao e aplicar estrutura inicial
+13. Configurar projeto na Vercel
+14. Primeiro deploy publico
+15. Pos-deploy e endurecimento de producao
+
+## Definicao atual da Etapa 10
+
+Escolha confirmada para publicacao:
+
+- **Aplicacao web:** Vercel
+- **Banco de dados:** Neon PostgreSQL
+- **Ambiente inicial:** producao primeiro
+- **Branch de producao:** `main`
+
+Checklist de saida da Etapa 10:
+
+- criar projeto na Vercel conectado ao GitHub
+- criar projeto e database no Neon
+- obter `DATABASE_URL` de producao
+- confirmar uso da `main` como branch de producao
+
+## Definicao atual da Etapa 12
+
+Objetivo atual:
+
+- criar o banco de producao no Neon
+- obter a `DATABASE_URL` de producao
+- aplicar o `script_inicial.sql`
+- criar o administrador inicial com `script_admin_inicial.sql`
+
+Arquivos de apoio criados para a Etapa 12:
+
+- [docs/etapa-12-neon-banco.md](/D:/Pessoal1/Projeto/financeiro/docs/etapa-12-neon-banco.md)
+- [script_admin_inicial.sql](/D:/Pessoal1/Projeto/financeiro/script_admin_inicial.sql)
+
+## Definicao atual da Etapa 13
+
+Objetivo atual:
+
+- importar o repositorio `Pablovincenzi/financeiro-backend` na Vercel
+- confirmar a `main` como branch de producao
+- cadastrar `DATABASE_URL` e `AUTH_SECRET`
+- disparar o primeiro deploy de producao
+
+Arquivos de apoio criados para a Etapa 13:
+
+- [docs/deploy-vercel-neon.md](/D:/Pessoal1/Projeto/financeiro/docs/deploy-vercel-neon.md)
+- [docs/etapa-13-vercel.md](/D:/Pessoal1/Projeto/financeiro/docs/etapa-13-vercel.md)
+
+## Definicao atual da Etapa 15
+
+Objetivo atual:
+
+- revisar logs e observabilidade da Vercel
+- validar os fluxos principais em producao
+- documentar rollback e rotina de deploy
+- revisar monitoramento e backup do Neon
+- preparar o caminho para homologacao futura com `develop`
+
+Arquivos de apoio criados para a Etapa 15:
+
+- [docs/deploy-vercel-neon.md](/D:/Pessoal1/Projeto/financeiro/docs/deploy-vercel-neon.md)
+- [docs/etapa-15-pos-deploy.md](/D:/Pessoal1/Projeto/financeiro/docs/etapa-15-pos-deploy.md)
+
+Proximo passo do deploy:
+
+- revisar `Logs`, `Deployments` e `Observability` na Vercel
+- validar os fluxos principais na URL publica
+- definir a estrategia de homologacao da branch `develop`
