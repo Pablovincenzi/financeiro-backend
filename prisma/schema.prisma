@@ -40,6 +40,8 @@ model Usuario {
   cartoes       Cartao[]
   faturas       FaturaCartao[]
   compras       CompraCartao[]
+  pixTransacoes PixTransacao[]
+  recebiveis    Recebivel[]
 
   @@map("usuarios")
 }
@@ -153,4 +155,39 @@ model CompraCartao {
   fatura        FaturaCartao? @relation(fields: [faturaId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   @@map("compras_cartao")
+}
+
+model PixTransacao {
+  id          Int      @id @default(autoincrement()) @db.Integer
+  usuarioId   Int      @map("usuario_id") @db.Integer
+  tipo        String   @db.VarChar(20)
+  valor       Decimal  @db.Decimal(14, 2)
+  dataPix     DateTime @map("data_pix") @db.Date
+  descricao   String   @db.VarChar(150)
+  conta       String?  @db.VarChar(120)
+  categoria   String?  @db.VarChar(80)
+  observacoes String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamp(6)
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("pix_transacoes")
+}
+
+model Recebivel {
+  id              Int       @id @default(autoincrement()) @db.Integer
+  usuarioId       Int       @map("usuario_id") @db.Integer
+  descricao       String    @db.VarChar(150)
+  valorPrevisto   Decimal   @map("valor_previsto") @db.Decimal(14, 2)
+  dataEsperada    DateTime  @map("data_esperada") @db.Date
+  dataRecebimento DateTime? @map("data_recebimento") @db.Date
+  origem          String?   @db.VarChar(120)
+  categoria       String?   @db.VarChar(80)
+  observacoes     String?   @db.Text
+  status          String    @default("pendente") @db.VarChar(20)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamp(6)
+  usuario         Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("recebiveis")
 }

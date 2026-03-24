@@ -9,13 +9,15 @@ const currencyString = z
   .refine((value) => /^\d+(?:[\.,]\d{1,2})?$/.test(value.replace(/\s/g, "")), moneyMessage);
 
 const optionalText = z.string().trim().max(500).optional().or(z.literal(""));
+const optionalShort = z.string().trim().max(120).optional().or(z.literal(""));
+const optionalCategory = z.string().trim().max(80).optional().or(z.literal(""));
 
 export const receitaSchema = z.object({
   id: z.coerce.number().int().positive().optional(),
   descricao: z.string().trim().min(3).max(150),
   valor: currencyString,
   dataRecebimento: z.string().min(1, "Informe a data de recebimento."),
-  categoria: z.string().trim().max(80).optional().or(z.literal("")),
+  categoria: optionalCategory,
   observacoes: optionalText,
   status: z.enum(["prevista", "recebida"]).default("prevista"),
 });
@@ -26,7 +28,7 @@ export const despesaSchema = z.object({
   valor: currencyString,
   dataVencimento: z.string().min(1, "Informe a data de vencimento."),
   dataPagamento: z.string().optional().or(z.literal("")),
-  categoria: z.string().trim().max(80).optional().or(z.literal("")),
+  categoria: optionalCategory,
   observacoes: optionalText,
   status: z.enum(["pendente", "paga"]).default("pendente"),
 });
@@ -36,7 +38,7 @@ export const contaFixaSchema = z.object({
   descricao: z.string().trim().min(3).max(150),
   valorPrevisto: currencyString,
   diaVencimento: z.coerce.number().int().min(1).max(31),
-  categoria: z.string().trim().max(80).optional().or(z.literal("")),
+  categoria: optionalCategory,
   periodicidade: z.enum(["mensal", "bimestral", "trimestral", "anual"]).default("mensal"),
   proximoVencimento: z.string().optional().or(z.literal("")),
   observacoes: optionalText,
@@ -73,9 +75,32 @@ export const compraCartaoSchema = z.object({
   descricao: z.string().trim().min(3).max(150),
   valor: currencyString,
   dataCompra: z.string().min(1, "Informe a data da compra."),
-  categoria: z.string().trim().max(80).optional().or(z.literal("")),
+  categoria: optionalCategory,
   observacoes: optionalText,
   status: z.enum(["lancada", "cancelada"]).default("lancada"),
+});
+
+export const pixSchema = z.object({
+  id: z.coerce.number().int().positive().optional(),
+  tipo: z.enum(["enviado", "recebido"]).default("recebido"),
+  valor: currencyString,
+  dataPix: z.string().min(1, "Informe a data do PIX."),
+  descricao: z.string().trim().min(3).max(150),
+  conta: optionalShort,
+  categoria: optionalCategory,
+  observacoes: optionalText,
+});
+
+export const recebivelSchema = z.object({
+  id: z.coerce.number().int().positive().optional(),
+  descricao: z.string().trim().min(3).max(150),
+  valorPrevisto: currencyString,
+  dataEsperada: z.string().min(1, "Informe a data esperada."),
+  dataRecebimento: z.string().optional().or(z.literal("")),
+  origem: optionalShort,
+  categoria: optionalCategory,
+  observacoes: optionalText,
+  status: z.enum(["pendente", "recebido", "atrasado"]).default("pendente"),
 });
 
 export type ReceitaInput = z.infer<typeof receitaSchema>;
@@ -84,3 +109,5 @@ export type ContaFixaInput = z.infer<typeof contaFixaSchema>;
 export type CartaoInput = z.infer<typeof cartaoSchema>;
 export type FaturaInput = z.infer<typeof faturaSchema>;
 export type CompraCartaoInput = z.infer<typeof compraCartaoSchema>;
+export type PixInput = z.infer<typeof pixSchema>;
+export type RecebivelInput = z.infer<typeof recebivelSchema>;

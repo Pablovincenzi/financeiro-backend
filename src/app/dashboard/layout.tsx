@@ -19,6 +19,8 @@ const links = [
   { href: "/dashboard/cartoes", label: "Cartoes" },
   { href: "/dashboard/compras-cartao", label: "Compras" },
   { href: "/dashboard/faturas", label: "Faturas" },
+  { href: "/dashboard/pix", label: "PIX" },
+  { href: "/dashboard/recebiveis", label: "Recebiveis" },
 ];
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {

@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Estruturar a base do sistema financeiro com autenticacao, modulos operacionais e o fluxo inicial de cartoes e faturas.
+Estruturar a base do sistema financeiro com autenticacao, modulos operacionais e o fluxo inicial de cartoes, PIX e valores a receber.
 
 ## Autenticacao
 
@@ -31,7 +31,7 @@ Estruturar a base do sistema financeiro com autenticacao, modulos operacionais e
 - `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 - `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 
-## Modulos do passo 4
+## Modulos financeiros
 
 ### receitas
 
@@ -66,8 +66,6 @@ Estruturar a base do sistema financeiro com autenticacao, modulos operacionais e
 - `observacoes` TEXT NULL
 - `ativa` BOOLEAN DEFAULT true
 
-## Modulos do passo 5
-
 ### cartoes
 
 - `usuario_id` INT4 FK -> `usuarios.id`
@@ -91,10 +89,6 @@ Estruturar a base do sistema financeiro com autenticacao, modulos operacionais e
 - `valor_pago` NUMERIC(14,2) DEFAULT 0
 - `status` VARCHAR(20) DEFAULT 'aberta'
 
-Regra:
-
-- `cartao_id + competencia` deve ser unico
-
 ### compras_cartao
 
 - `usuario_id` INT4 FK -> `usuarios.id`
@@ -107,6 +101,40 @@ Regra:
 - `observacoes` TEXT NULL
 - `status` VARCHAR(20) DEFAULT 'lancada'
 
+### pix_transacoes
+
+- `usuario_id` INT4 FK -> `usuarios.id`
+- `tipo` VARCHAR(20) NOT NULL
+- `valor` NUMERIC(14,2) NOT NULL
+- `data_pix` DATE NOT NULL
+- `descricao` VARCHAR(150) NOT NULL
+- `conta` VARCHAR(120) NULL
+- `categoria` VARCHAR(80) NULL
+- `observacoes` TEXT NULL
+
+Tipos:
+
+- `recebido`
+- `enviado`
+
+### recebiveis
+
+- `usuario_id` INT4 FK -> `usuarios.id`
+- `descricao` VARCHAR(150) NOT NULL
+- `valor_previsto` NUMERIC(14,2) NOT NULL
+- `data_esperada` DATE NOT NULL
+- `data_recebimento` DATE NULL
+- `origem` VARCHAR(120) NULL
+- `categoria` VARCHAR(80) NULL
+- `observacoes` TEXT NULL
+- `status` VARCHAR(20) DEFAULT 'pendente'
+
+Status:
+
+- `pendente`
+- `recebido`
+- `atrasado`
+
 ## Relacionamentos
 
 - `pessoas (1) -> (0..1) usuarios`
@@ -116,6 +144,8 @@ Regra:
 - `usuarios (1) -> (N) cartoes`
 - `usuarios (1) -> (N) faturas_cartao`
 - `usuarios (1) -> (N) compras_cartao`
+- `usuarios (1) -> (N) pix_transacoes`
+- `usuarios (1) -> (N) recebiveis`
 - `cartoes (1) -> (N) faturas_cartao`
 - `cartoes (1) -> (N) compras_cartao`
 - `faturas_cartao (1) -> (N) compras_cartao`
@@ -124,4 +154,6 @@ Regra:
 
 - cada registro pertence ao usuario autenticado
 - compras no cartao podem existir sem fatura vinculada no primeiro momento
+- PIX separa entradas e saidas de transferencias instantaneas
+- recebiveis ajudam a acompanhar valores previstos antes do recebimento real
 - parcelamentos ficam para a proxima etapa de desenvolvimento
