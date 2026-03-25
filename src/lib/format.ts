@@ -1,4 +1,9 @@
-﻿export function parseCurrencyToNumber(value: string) {
+export type MonthOption = {
+  value: string;
+  label: string;
+};
+
+export function parseCurrencyToNumber(value: string) {
   const normalized = value.trim();
 
   if (normalized.includes(",")) {
@@ -47,13 +52,17 @@ export function buildMonthRange(value: string) {
   return { start, end };
 }
 
+export function buildMonthRanges(values: string[]) {
+  return values.map((value) => buildMonthRange(value));
+}
+
 export function currentMonthValue() {
   const now = new Date();
   const month = String(now.getMonth() + 1).padStart(2, "0");
   return `${now.getFullYear()}-${month}`;
 }
 
-export function buildRecentMonthOptions(total = 6) {
+export function buildRecentMonthOptions(total = 6): MonthOption[] {
   const now = new Date();
 
   return Array.from({ length: total }, (_, index) => {
@@ -66,4 +75,51 @@ export function buildRecentMonthOptions(total = 6) {
       label: formatMonthLabel(value),
     };
   });
+}
+
+export function parseSelectedMonths(raw?: string | null, fallbackValue = currentMonthValue()) {
+  const months = (raw ?? "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter((value) => /^\d{4}-\d{2}$/.test(value));
+
+  const uniqueMonths = [...new Set(months)].sort((left, right) => right.localeCompare(left));
+
+  if (uniqueMonths.length > 0) {
+    return uniqueMonths;
+  }
+
+  return [fallbackValue];
+}
+
+export function formatSelectedMonthsSummary(values: string[]) {
+  if (values.length === 1) {
+    return formatMonthLabel(values[0]);
+  }
+
+  return `${formatMonthLabel(values[0])} + ${values.length - 1} meses`;
+}
+
+export function buildMonthSelectionHref(
+  pathname: string,
+  selectedMonths: string[],
+  toggledMonth: string,
+  extraParams?: Record<string, string | undefined>,
+) {
+  const nextMonths = selectedMonths.includes(toggledMonth)
+    ? selectedMonths.filter((month) => month !== toggledMonth)
+    : [...selectedMonths, toggledMonth];
+
+  const normalizedMonths = (nextMonths.length > 0 ? nextMonths : [toggledMonth]).sort((left, right) => right.localeCompare(left));
+  const params = new URLSearchParams();
+
+  params.set("months", normalizedMonths.join(","));
+
+  Object.entries(extraParams ?? {}).forEach(([key, value]) => {
+    if (value) {
+      params.set(key, value);
+    }
+  });
+
+  return `${pathname}?${params.toString()}`;
 }
