@@ -28,7 +28,7 @@ export default async function DespesasPage({ searchParams }: PageProps) {
   const monthOptions = buildRecentMonthOptions(6);
   const monthRanges = buildMonthRanges(selectedMonths);
 
-  const [despesas, categorias] = await Promise.all([
+  const [despesas, categorias, tags] = await Promise.all([
     prisma.despesa.findMany({
       where: {
         usuarioId: userId,
@@ -37,7 +37,7 @@ export default async function DespesasPage({ searchParams }: PageProps) {
         })),
       },
       orderBy: { dataVencimento: "asc" },
-      include: { categoriaDespesa: true },
+      include: { categoriaDespesa: true, tag: true },
     }),
     prisma.categoriaDespesa.findMany({
       where: {
@@ -49,6 +49,7 @@ export default async function DespesasPage({ searchParams }: PageProps) {
       },
       orderBy: { nome: "asc" },
     }),
+    prisma.tag.findMany({ orderBy: { nome: "asc" } }),
   ]);
 
   const despesaEmEdicao = params?.edit ? despesas.find((item) => item.id === Number(params.edit)) : null;
@@ -117,15 +118,26 @@ export default async function DespesasPage({ searchParams }: PageProps) {
                 </select>
               </div>
             </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium">Categoria</label>
-              <select name="categoriaId" defaultValue={despesaEmEdicao?.categoriaDespesaId ?? ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" required>
-                <option value="" disabled>Selecione uma categoria</option>
-                {categorias.map((categoria) => (
-                  <option key={categoria.id} value={categoria.id}>{categoria.nome}</option>
-                ))}
-              </select>
-              <p className="mt-2 text-xs text-muted">Cadastre novas categorias em <Link href="/dashboard/categorias" className="text-accent">Categorias</Link>.</p>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-sm font-medium">Categoria</label>
+                <select name="categoriaId" defaultValue={despesaEmEdicao?.categoriaDespesaId ?? ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" required>
+                  <option value="" disabled>Selecione uma categoria</option>
+                  {categorias.map((categoria) => (
+                    <option key={categoria.id} value={categoria.id}>{categoria.nome}</option>
+                  ))}
+                </select>
+                <p className="mt-2 text-xs text-muted">Cadastre novas categorias em <Link href="/dashboard/categorias" className="text-accent">Categorias</Link>.</p>
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium">Tag</label>
+                <select name="tagId" defaultValue={despesaEmEdicao?.tagId ?? ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" required>
+                  <option value="" disabled>Selecione uma tag</option>
+                  {tags.map((tag) => (
+                    <option key={tag.id} value={tag.id}>{tag.nome}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium">Observacoes</label>
@@ -146,7 +158,9 @@ export default async function DespesasPage({ searchParams }: PageProps) {
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                   <div>
                     <h3 className="text-lg font-semibold">{despesa.descricao}</h3>
-                    <p className="mt-1 text-sm text-muted">{despesa.categoriaDespesa.nome} · vence em {formatDate(despesa.dataVencimento)} · {despesa.status}</p>
+                    <p className="mt-1 text-sm text-muted">
+                      {despesa.categoriaDespesa.nome} | {despesa.tag?.nome ?? "Sem tag"} | vence em {formatDate(despesa.dataVencimento)} | {despesa.status}
+                    </p>
                     {despesa.dataPagamento ? <p className="mt-1 text-sm text-muted">Pago em {formatDate(despesa.dataPagamento)}</p> : null}
                     {despesa.observacoes ? <p className="mt-2 text-sm text-muted">{despesa.observacoes}</p> : null}
                   </div>

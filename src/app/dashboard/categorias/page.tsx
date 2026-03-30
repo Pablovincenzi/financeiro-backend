@@ -16,7 +16,7 @@ export default async function CategoriasPage({ searchParams }: PageProps) {
   await requireCurrentUser();
   const params = searchParams ? await searchParams : undefined;
 
-  const [usuarios, tags, categorias] = await Promise.all([
+  const [usuarios, categorias] = await Promise.all([
     prisma.usuario.findMany({
       where: {
         ativo: true,
@@ -25,11 +25,9 @@ export default async function CategoriasPage({ searchParams }: PageProps) {
       orderBy: { pessoa: { nomeCompleto: "asc" } },
       include: { pessoa: true },
     }),
-    prisma.tag.findMany(),
     prisma.categoriaDespesa.findMany({
       orderBy: { nome: "asc" },
       include: {
-        tag: true,
         usuarios: {
           include: {
             usuario: {
@@ -53,7 +51,6 @@ export default async function CategoriasPage({ searchParams }: PageProps) {
     : null;
 
   const usuariosSelecionados = categoriaEmEdicao?.usuarios.map((item) => String(item.usuarioId)) ?? [];
-  const orderedTags = [...tags].sort((left, right) => left.nome.localeCompare(right.nome, "pt-BR"));
   const userOptions = usuarios.map((usuario) => ({
     id: usuario.id,
     label: `${usuario.pessoa.nomeCompleto} - ${usuario.login}`,
@@ -88,25 +85,6 @@ export default async function CategoriasPage({ searchParams }: PageProps) {
               placeholder="Apartamento"
               required
             />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium">Tag</label>
-            <select
-              name="tagId"
-              defaultValue={categoriaEmEdicao?.tagId ?? ""}
-              className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent"
-              required
-            >
-              <option value="" disabled>
-                Selecione uma tag
-              </option>
-              {orderedTags.map((tag) => (
-                <option key={tag.id} value={tag.id}>
-                  {tag.nome}
-                </option>
-              ))}
-            </select>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -170,14 +148,7 @@ export default async function CategoriasPage({ searchParams }: PageProps) {
               <div key={categoria.id} className="rounded-2xl border border-border px-4 py-4">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                   <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-lg font-semibold">{categoria.nome}</h3>
-                      {categoria.tag ? (
-                        <span className="rounded-full bg-surface-strong px-3 py-1 text-xs font-medium text-muted">
-                          Tag: {categoria.tag.nome}
-                        </span>
-                      ) : null}
-                    </div>
+                    <h3 className="text-lg font-semibold">{categoria.nome}</h3>
                     <p className="mt-1 text-sm text-muted">
                       Inicio em {formatDate(categoria.dataInicio)}
                       {categoria.dataFim ? ` - fim em ${formatDate(categoria.dataFim)}` : " - sem data fim"}

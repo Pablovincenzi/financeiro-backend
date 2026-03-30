@@ -48,17 +48,15 @@ model Usuario {
 }
 
 model CategoriaDespesa {
-  id            Int                      @id @default(autoincrement()) @db.Integer
-  nome          String                   @unique @db.VarChar(120)
-  tagId         Int?                     @map("tag_id") @db.Integer
-  dataInicio    DateTime                 @map("data_inicio") @db.Date
-  dataFim       DateTime?                @map("data_fim") @db.Date
-  observacoes   String?                  @db.Text
-  createdAt     DateTime                 @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt     DateTime                 @updatedAt @map("updated_at") @db.Timestamp(6)
-  despesas      Despesa[]
-  usuarios      CategoriaDespesaUsuario[]
-  tag           Tag?                     @relation(fields: [tagId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  id          Int                      @id @default(autoincrement()) @db.Integer
+  nome        String                   @unique @db.VarChar(120)
+  dataInicio  DateTime                 @map("data_inicio") @db.Date
+  dataFim     DateTime?                @map("data_fim") @db.Date
+  observacoes String?                  @db.Text
+  createdAt   DateTime                 @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt   DateTime                 @updatedAt @map("updated_at") @db.Timestamp(6)
+  despesas    Despesa[]
+  usuarios    CategoriaDespesaUsuario[]
 
   @@map("categorias_despesa")
 }
@@ -76,11 +74,12 @@ model CategoriaDespesaUsuario {
 }
 
 model Tag {
-  id                Int                @id @default(autoincrement()) @db.Integer
-  nome              String             @unique @db.VarChar(80)
-  createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt         DateTime           @updatedAt @map("updated_at") @db.Timestamp(6)
-  categoriasDespesa CategoriaDespesa[]
+  id        Int       @id @default(autoincrement()) @db.Integer
+  nome      String    @unique @db.VarChar(80)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamp(6)
+  receitas  Receita[]
+  despesas  Despesa[]
 
   @@map("tb_tag")
 }
@@ -88,6 +87,7 @@ model Tag {
 model Receita {
   id              Int      @id @default(autoincrement()) @db.Integer
   usuarioId       Int      @map("usuario_id") @db.Integer
+  tagId           Int?     @map("tag_id") @db.Integer
   descricao       String   @db.VarChar(150)
   valor           Decimal  @db.Decimal(14, 2)
   dataRecebimento DateTime @map("data_recebimento") @db.Date
@@ -97,6 +97,7 @@ model Receita {
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamp(6)
   usuario         Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  tag             Tag?     @relation(fields: [tagId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   @@map("receitas")
 }
@@ -105,6 +106,7 @@ model Despesa {
   id                 Int              @id @default(autoincrement()) @db.Integer
   usuarioId          Int              @map("usuario_id") @db.Integer
   categoriaDespesaId Int              @map("categoria_id") @db.Integer
+  tagId              Int?             @map("tag_id") @db.Integer
   descricao          String           @db.VarChar(150)
   valor              Decimal          @db.Decimal(14, 2)
   dataVencimento     DateTime         @map("data_vencimento") @db.Date
@@ -115,6 +117,7 @@ model Despesa {
   updatedAt          DateTime         @updatedAt @map("updated_at") @db.Timestamp(6)
   usuario            Usuario          @relation(fields: [usuarioId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   categoriaDespesa   CategoriaDespesa @relation(fields: [categoriaDespesaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  tag                Tag?             @relation(fields: [tagId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   @@map("despesas")
 }

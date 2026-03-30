@@ -12,6 +12,7 @@ const currencyString = z
 const optionalText = z.string().trim().max(500).optional().or(z.literal(""));
 const optionalShort = z.string().trim().max(120).optional().or(z.literal(""));
 const optionalCategory = z.string().trim().max(80).optional().or(z.literal(""));
+const requiredTag = z.coerce.number().int().positive("Selecione uma tag.");
 const dateString = (message: string) =>
   z
     .string()
@@ -24,6 +25,7 @@ export const receitaSchema = z.object({
   valor: currencyString,
   dataRecebimento: dateString("Informe a data de recebimento."),
   categoria: optionalCategory,
+  tagId: requiredTag,
   observacoes: optionalText,
   status: z.enum(["prevista", "recebida"]).default("prevista"),
 });
@@ -35,6 +37,7 @@ export const despesaSchema = z.object({
   dataVencimento: dateString("Informe a data de vencimento."),
   dataPagamento: z.string().optional().or(z.literal("")),
   categoriaId: z.coerce.number().int().positive("Selecione uma categoria."),
+  tagId: requiredTag,
   observacoes: optionalText,
   status: z.enum(["pendente", "paga"]).default("pendente"),
 });
@@ -43,7 +46,6 @@ export const categoriaDespesaSchema = z
   .object({
     id: z.coerce.number().int().positive().optional(),
     nome: z.string().trim().min(3, "Informe o nome da categoria.").max(120),
-    tagId: z.coerce.number().int().positive("Selecione uma tag."),
     dataInicio: dateString("Informe a data de inicio."),
     dataFim: z.string().optional().or(z.literal("")),
     observacoes: optionalText,

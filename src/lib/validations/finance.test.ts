@@ -1,26 +1,23 @@
 import { describe, expect, it } from "vitest";
 
-import { categoriaDespesaSchema, despesaSchema, faturaSchema, pixSchema, recebivelSchema } from "@/lib/validations/finance";
+import { categoriaDespesaSchema, despesaSchema, faturaSchema, pixSchema, recebivelSchema, receitaSchema } from "@/lib/validations/finance";
 
 describe("finance validations", () => {
   it("aceita payload valido de categoria de despesa", () => {
     const parsed = categoriaDespesaSchema.parse({
       nome: "Apartamento",
-      tagId: 1,
       dataInicio: "2026-03-24",
       dataFim: "2026-12-31",
       observacoes: "Categoria principal de moradia",
       usuariosIds: [1, 3],
     });
 
-    expect(parsed.tagId).toBe(1);
     expect(parsed.usuariosIds).toHaveLength(2);
   });
 
   it("rejeita categoria sem usuarios", () => {
     const result = categoriaDespesaSchema.safeParse({
       nome: "Apartamento",
-      tagId: 1,
       dataInicio: "2026-03-24",
       dataFim: "",
       observacoes: "",
@@ -30,31 +27,48 @@ describe("finance validations", () => {
     expect(result.success).toBe(false);
   });
 
-  it("rejeita categoria sem tag", () => {
-    const result = categoriaDespesaSchema.safeParse({
-      nome: "Apartamento",
-      tagId: "",
-      dataInicio: "2026-03-24",
-      dataFim: "",
+  it("aceita receita com tag obrigatoria", () => {
+    const parsed = receitaSchema.parse({
+      descricao: "Salario",
+      valor: "4500.00",
+      dataRecebimento: "2026-03-24",
+      categoria: "Salario",
+      tagId: 2,
       observacoes: "",
-      usuariosIds: [1],
+      status: "recebida",
+    });
+
+    expect(parsed.tagId).toBe(2);
+  });
+
+  it("rejeita receita sem tag", () => {
+    const result = receitaSchema.safeParse({
+      descricao: "Salario",
+      valor: "4500.00",
+      dataRecebimento: "2026-03-24",
+      categoria: "Salario",
+      tagId: "",
+      observacoes: "",
+      status: "recebida",
     });
 
     expect(result.success).toBe(false);
   });
 
-  it("aceita payload valido de despesa com categoria obrigatoria", () => {
+  it("aceita payload valido de despesa com categoria e tag obrigatorias", () => {
     const parsed = despesaSchema.parse({
       descricao: "Aluguel",
       valor: "1500.00",
       dataVencimento: "2026-03-24",
       dataPagamento: "",
       categoriaId: 1,
+      tagId: 3,
       observacoes: "",
       status: "pendente",
     });
 
     expect(parsed.categoriaId).toBe(1);
+    expect(parsed.tagId).toBe(3);
   });
 
   it("rejeita despesa sem categoria", () => {
@@ -64,6 +78,22 @@ describe("finance validations", () => {
       dataVencimento: "2026-03-24",
       dataPagamento: "",
       categoriaId: "",
+      tagId: 3,
+      observacoes: "",
+      status: "pendente",
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejeita despesa sem tag", () => {
+    const result = despesaSchema.safeParse({
+      descricao: "Aluguel",
+      valor: "1500.00",
+      dataVencimento: "2026-03-24",
+      dataPagamento: "",
+      categoriaId: 1,
+      tagId: "",
       observacoes: "",
       status: "pendente",
     });

@@ -64,6 +64,14 @@ function revalidateAllPages() {
   ].forEach((path) => revalidatePath(path));
 }
 
+async function ensureTagExists(tagId: number) {
+  const tag = await prisma.tag.findUnique({ where: { id: tagId }, select: { id: true } });
+
+  if (!tag) {
+    throw new Error("Selecione uma tag valida.");
+  }
+}
+
 export async function saveReceita(formData: FormData) {
   const { userId } = await requireCurrentUser();
   const parsed = receitaSchema.parse({
@@ -72,9 +80,12 @@ export async function saveReceita(formData: FormData) {
     valor: formData.get("valor"),
     dataRecebimento: formData.get("dataRecebimento"),
     categoria: formData.get("categoria"),
+    tagId: formData.get("tagId"),
     observacoes: formData.get("observacoes"),
     status: formData.get("status"),
   });
+
+  await ensureTagExists(parsed.tagId);
 
   const data = {
     usuarioId: userId,
@@ -82,6 +93,7 @@ export async function saveReceita(formData: FormData) {
     valor: parseCurrencyToNumber(parsed.valor),
     dataRecebimento: new Date(parsed.dataRecebimento),
     categoria: emptyToNull(parsed.categoria),
+    tagId: parsed.tagId,
     observacoes: emptyToNull(parsed.observacoes),
     status: parsed.status,
   };
@@ -107,31 +119,20 @@ export async function saveCategoriaDespesa(formData: FormData) {
   const parsed = categoriaDespesaSchema.parse({
     id: formData.get("id") || undefined,
     nome: formData.get("nome"),
-    tagId: formData.get("tagId"),
     dataInicio: formData.get("dataInicio"),
     dataFim: formData.get("dataFim"),
     observacoes: formData.get("observacoes"),
     usuariosIds: formData.getAll("usuariosIds"),
   });
 
-  const [activeUsers, tag] = await Promise.all([
-    prisma.usuario.findMany({
-      where: {
-        ativo: true,
-        id: { in: parsed.usuariosIds },
-        pessoa: { ativo: true },
-      },
-      select: { id: true },
-    }),
-    prisma.tag.findUnique({
-      where: { id: parsed.tagId },
-      select: { id: true },
-    }),
-  ]);
-
-  if (!tag) {
-    throw new Error("Selecione uma tag valida para a categoria.");
-  }
+  const activeUsers = await prisma.usuario.findMany({
+    where: {
+      ativo: true,
+      id: { in: parsed.usuariosIds },
+      pessoa: { ativo: true },
+    },
+    select: { id: true },
+  });
 
   if (activeUsers.length !== parsed.usuariosIds.length) {
     throw new Error("Selecione apenas usuarios ativos para a categoria.");
@@ -139,7 +140,6 @@ export async function saveCategoriaDespesa(formData: FormData) {
 
   const data = {
     nome: parsed.nome,
-    tagId: parsed.tagId,
     dataInicio: new Date(parsed.dataInicio),
     dataFim: emptyToDate(parsed.dataFim),
     observacoes: emptyToNull(parsed.observacoes),
@@ -192,29 +192,38 @@ export async function saveDespesa(formData: FormData) {
     dataVencimento: formData.get("dataVencimento"),
     dataPagamento: formData.get("dataPagamento"),
     categoriaId: formData.get("categoriaId"),
+    tagId: formData.get("tagId"),
     observacoes: formData.get("observacoes"),
     status: formData.get("status"),
   });
 
-  const categoriaPermitida = await prisma.categoriaDespesa.findFirst({
-    where: {
-      id: parsed.categoriaId,
-      usuarios: {
-        some: {
-          usuarioId: userId,
+  const [categoriaPermitida, tag] = await Promise.all([
+    prisma.categoriaDespesa.findFirst({
+      where: {
+        id: parsed.categoriaId,
+        usuarios: {
+          some: {
+            usuarioId: userId,
+          },
         },
       },
-    },
-    select: { id: true },
-  });
+      select: { id: true },
+    }),
+    prisma.tag.findUnique({ where: { id: parsed.tagId }, select: { id: true } }),
+  ]);
 
   if (!categoriaPermitida) {
     throw new Error("Selecione uma categoria vinculada ao usuario atual.");
   }
 
+  if (!tag) {
+    throw new Error("Selecione uma tag valida.");
+  }
+
   const data = {
     usuarioId: userId,
     categoriaDespesaId: parsed.categoriaId,
+    tagId: parsed.tagId,
     descricao: parsed.descricao,
     valor: parseCurrencyToNumber(parsed.valor),
     dataVencimento: new Date(parsed.dataVencimento),
