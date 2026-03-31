@@ -30,17 +30,30 @@ export const receitaSchema = z.object({
   status: z.enum(["prevista", "recebida"]).default("prevista"),
 });
 
-export const despesaSchema = z.object({
-  id: z.coerce.number().int().positive().optional(),
-  descricao: z.string().trim().min(3).max(150),
-  valor: currencyString,
-  dataVencimento: dateString("Informe a data de vencimento."),
-  dataPagamento: z.string().optional().or(z.literal("")),
-  categoriaId: z.coerce.number().int().positive("Selecione uma categoria."),
-  tagId: requiredTag,
-  observacoes: optionalText,
-  status: z.enum(["pendente", "paga"]).default("pendente"),
-});
+export const despesaSchema = z
+  .object({
+    id: z.coerce.number().int().positive().optional(),
+    descricao: z.string().trim().min(3).max(150),
+    valor: currencyString,
+    dataVencimento: dateString("Informe a data de vencimento."),
+    dataPagamento: z.string().optional().or(z.literal("")),
+    categoriaId: z.coerce.number().int().positive("Selecione uma categoria."),
+    tagId: requiredTag,
+    formaPagamento: z.enum(["a_vista", "a_prazo"], "Selecione a forma de pagamento."),
+    meioPagamento: z.enum(["dinheiro", "pix"]).optional().or(z.literal("")),
+    cartaoId: z.string().trim().optional().or(z.literal("")),
+    observacoes: optionalText,
+    status: z.enum(["pendente", "paga"]).default("pendente"),
+  })
+  .superRefine((data, ctx) => {
+    if (data.formaPagamento === "a_vista" && !data.meioPagamento) {
+      ctx.addIssue({ code: "custom", message: "Selecione se o pagamento a vista sera em dinheiro ou PIX.", path: ["meioPagamento"] });
+    }
+
+    if (data.formaPagamento === "a_prazo" && !data.cartaoId) {
+      ctx.addIssue({ code: "custom", message: "Selecione um cartao para o pagamento a prazo.", path: ["cartaoId"] });
+    }
+  });
 
 export const categoriaDespesaSchema = z
   .object({

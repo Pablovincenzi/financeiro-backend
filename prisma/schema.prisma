@@ -107,10 +107,13 @@ model Despesa {
   usuarioId          Int              @map("usuario_id") @db.Integer
   categoriaDespesaId Int              @map("categoria_id") @db.Integer
   tagId              Int?             @map("tag_id") @db.Integer
+  cartaoId           Int?             @map("cartao_id") @db.Integer
   descricao          String           @db.VarChar(150)
   valor              Decimal          @db.Decimal(14, 2)
   dataVencimento     DateTime         @map("data_vencimento") @db.Date
   dataPagamento      DateTime?        @map("data_pagamento") @db.Date
+  formaPagamento     String           @default("a_vista") @map("forma_pagamento") @db.VarChar(20)
+  meioPagamento      String?          @map("meio_pagamento") @db.VarChar(20)
   observacoes        String?          @db.Text
   status             String           @default("pendente") @db.VarChar(20)
   createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamp(6)
@@ -118,6 +121,7 @@ model Despesa {
   usuario            Usuario          @relation(fields: [usuarioId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   categoriaDespesa   CategoriaDespesa @relation(fields: [categoriaDespesaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   tag                Tag?             @relation(fields: [tagId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  cartao             Cartao?          @relation(fields: [cartaoId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   @@map("despesas")
 }
@@ -156,6 +160,7 @@ model Cartao {
   usuario        Usuario        @relation(fields: [usuarioId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   faturas        FaturaCartao[]
   compras        CompraCartao[]
+  despesas       Despesa[]
 
   @@map("cartoes")
 }

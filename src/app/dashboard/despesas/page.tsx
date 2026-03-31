@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { deleteDespesa, saveDespesa } from "@/app/dashboard/finance-actions";
 import { DashboardListPanel } from "@/components/dashboard/dashboard-list-panel";
+import { ExpenseForm } from "@/components/dashboard/expense-form";
 import { DashboardPeriodHeader } from "@/components/dashboard/dashboard-period-header";
 import { requireCurrentUser } from "@/lib/auth";
 import {
@@ -21,6 +22,22 @@ type PageProps = {
   }>;
 };
 
+function formatPaymentLabel(despesa: {
+  formaPagamento: string;
+  meioPagamento: string | null;
+  cartao?: { nome: string } | null;
+}) {
+  if (despesa.formaPagamento === "a_prazo") {
+    return despesa.cartao ? `A prazo | ${despesa.cartao.nome}` : "A prazo";
+  }
+
+  if (despesa.meioPagamento === "pix") {
+    return "A vista | PIX";
+  }
+
+  return "A vista | Dinheiro";
+}
+
 export default async function DespesasPage({ searchParams }: PageProps) {
   const { userId } = await requireCurrentUser();
   const params = searchParams ? await searchParams : undefined;
@@ -28,7 +45,7 @@ export default async function DespesasPage({ searchParams }: PageProps) {
   const monthOptions = buildRecentMonthOptions(6);
   const monthRanges = buildMonthRanges(selectedMonths);
 
-  const [despesas, categorias, tags] = await Promise.all([
+  const [despesas, categorias, tags, cartoes] = await Promise.all([
     prisma.despesa.findMany({
       where: {
         usuarioId: userId,
@@ -37,7 +54,7 @@ export default async function DespesasPage({ searchParams }: PageProps) {
         })),
       },
       orderBy: { dataVencimento: "asc" },
-      include: { categoriaDespesa: true, tag: true },
+      include: { categoriaDespesa: true, tag: true, cartao: true },
     }),
     prisma.categoriaDespesa.findMany({
       where: {
@@ -50,6 +67,7 @@ export default async function DespesasPage({ searchParams }: PageProps) {
       orderBy: { nome: "asc" },
     }),
     prisma.tag.findMany({ orderBy: { nome: "asc" } }),
+    prisma.cartao.findMany({ where: { usuarioId: userId, ativo: true }, orderBy: { nome: "asc" } }),
   ]);
 
   const despesaEmEdicao = params?.edit ? despesas.find((item) => item.id === Number(params.edit)) : null;
@@ -89,64 +107,30 @@ export default async function DespesasPage({ searchParams }: PageProps) {
             ) : null}
           </div>
 
-          <form action={saveDespesa} className="mt-6 space-y-4">
-            <input type="hidden" name="id" value={despesaEmEdicao?.id ?? ""} />
-            <div>
-              <label className="mb-2 block text-sm font-medium">Descricao</label>
-              <input name="descricao" defaultValue={despesaEmEdicao?.descricao ?? ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" required />
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm font-medium">Valor</label>
-                <input name="valor" defaultValue={despesaEmEdicao ? Number(despesaEmEdicao.valor).toFixed(2) : ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" placeholder="299.90" required />
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium">Data de vencimento</label>
-                <input type="date" name="dataVencimento" defaultValue={despesaEmEdicao ? despesaEmEdicao.dataVencimento.toISOString().slice(0, 10) : ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" required />
-              </div>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm font-medium">Data de pagamento</label>
-                <input type="date" name="dataPagamento" defaultValue={despesaEmEdicao?.dataPagamento ? despesaEmEdicao.dataPagamento.toISOString().slice(0, 10) : ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" />
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium">Status</label>
-                <select name="status" defaultValue={despesaEmEdicao?.status ?? "pendente"} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent">
-                  <option value="pendente">Pendente</option>
-                  <option value="paga">Paga</option>
-                </select>
-              </div>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm font-medium">Categoria</label>
-                <select name="categoriaId" defaultValue={despesaEmEdicao?.categoriaDespesaId ?? ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" required>
-                  <option value="" disabled>Selecione uma categoria</option>
-                  {categorias.map((categoria) => (
-                    <option key={categoria.id} value={categoria.id}>{categoria.nome}</option>
-                  ))}
-                </select>
-                <p className="mt-2 text-xs text-muted">Cadastre novas categorias em <Link href="/dashboard/categorias" className="text-accent">Categorias</Link>.</p>
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium">Tag</label>
-                <select name="tagId" defaultValue={despesaEmEdicao?.tagId ?? ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" required>
-                  <option value="" disabled>Selecione uma tag</option>
-                  {tags.map((tag) => (
-                    <option key={tag.id} value={tag.id}>{tag.nome}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium">Observacoes</label>
-              <textarea name="observacoes" defaultValue={despesaEmEdicao?.observacoes ?? ""} className="min-h-28 w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" />
-            </div>
-            <button className="w-full rounded-2xl bg-accent px-4 py-3 text-sm font-semibold text-white transition hover:bg-accent-strong">
-              {despesaEmEdicao ? "Salvar alteracoes" : "Cadastrar despesa"}
-            </button>
-          </form>
+          <ExpenseForm
+            action={saveDespesa}
+            categorias={categorias.map((categoria) => ({ id: categoria.id, nome: categoria.nome }))}
+            tags={tags.map((tag) => ({ id: tag.id, nome: tag.nome }))}
+            cartoes={cartoes.map((cartao) => ({ id: cartao.id, nome: cartao.nome }))}
+            expense={despesaEmEdicao ? {
+              id: despesaEmEdicao.id,
+              descricao: despesaEmEdicao.descricao,
+              valor: Number(despesaEmEdicao.valor),
+              dataVencimento: despesaEmEdicao.dataVencimento.toISOString().slice(0, 10),
+              dataPagamento: despesaEmEdicao.dataPagamento ? despesaEmEdicao.dataPagamento.toISOString().slice(0, 10) : "",
+              categoriaId: despesaEmEdicao.categoriaDespesaId,
+              tagId: despesaEmEdicao.tagId,
+              formaPagamento: despesaEmEdicao.formaPagamento,
+              meioPagamento: despesaEmEdicao.meioPagamento,
+              cartaoId: despesaEmEdicao.cartaoId,
+              observacoes: despesaEmEdicao.observacoes,
+              status: despesaEmEdicao.status,
+            } : null}
+          />
+
+          <div className="mt-4 rounded-2xl border border-border/80 bg-surface-strong px-4 py-3 text-xs text-muted">
+            Pagamento a vista aceita apenas dinheiro ou PIX. Para pagamento a prazo, selecione um cartao ativo do usuario.
+          </div>
         </article>
 
         <DashboardListPanel title="Despesas cadastradas" totalLabel={formatCurrency(totalDespesas)}>
@@ -159,8 +143,9 @@ export default async function DespesasPage({ searchParams }: PageProps) {
                   <div>
                     <h3 className="text-lg font-semibold">{despesa.descricao}</h3>
                     <p className="mt-1 text-sm text-muted">
-                      {despesa.categoriaDespesa.nome} | {despesa.tag?.nome ?? "Sem tag"} | vence em {formatDate(despesa.dataVencimento)} | {despesa.status}
+                      {despesa.categoriaDespesa.nome} | {despesa.tag?.nome ?? "Sem tag"} | {formatPaymentLabel(despesa)}
                     </p>
+                    <p className="mt-1 text-sm text-muted">Vence em {formatDate(despesa.dataVencimento)} | {despesa.status}</p>
                     {despesa.dataPagamento ? <p className="mt-1 text-sm text-muted">Pago em {formatDate(despesa.dataPagamento)}</p> : null}
                     {despesa.observacoes ? <p className="mt-2 text-sm text-muted">{despesa.observacoes}</p> : null}
                   </div>

@@ -19,9 +19,7 @@ const links = [
   { href: "/dashboard/categorias", label: "Categorias", shortLabel: "CT" },
   { href: "/dashboard/contas-fixas", label: "Contas fixas", shortLabel: "CF" },
   { href: "/dashboard/cartoes", label: "Cartoes", shortLabel: "CR" },
-  { href: "/dashboard/compras-cartao", label: "Compras", shortLabel: "CP" },
   { href: "/dashboard/faturas", label: "Faturas", shortLabel: "FT" },
-  { href: "/dashboard/pix", label: "PIX", shortLabel: "PX" },
 ];
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {

@@ -193,11 +193,14 @@ export async function saveDespesa(formData: FormData) {
     dataPagamento: formData.get("dataPagamento"),
     categoriaId: formData.get("categoriaId"),
     tagId: formData.get("tagId"),
+    formaPagamento: formData.get("formaPagamento"),
+    meioPagamento: formData.get("meioPagamento"),
+    cartaoId: formData.get("cartaoId"),
     observacoes: formData.get("observacoes"),
     status: formData.get("status"),
   });
 
-  const [categoriaPermitida, tag] = await Promise.all([
+  const [categoriaPermitida, tag, cartao] = await Promise.all([
     prisma.categoriaDespesa.findFirst({
       where: {
         id: parsed.categoriaId,
@@ -210,6 +213,12 @@ export async function saveDespesa(formData: FormData) {
       select: { id: true },
     }),
     prisma.tag.findUnique({ where: { id: parsed.tagId }, select: { id: true } }),
+    parsed.formaPagamento === "a_prazo" && parsed.cartaoId
+      ? prisma.cartao.findFirst({
+          where: { id: Number(parsed.cartaoId), usuarioId: userId, ativo: true },
+          select: { id: true },
+        })
+      : Promise.resolve(null),
   ]);
 
   if (!categoriaPermitida) {
@@ -220,6 +229,10 @@ export async function saveDespesa(formData: FormData) {
     throw new Error("Selecione uma tag valida.");
   }
 
+  if (parsed.formaPagamento === "a_prazo" && !cartao) {
+    throw new Error("Selecione um cartao ativo do usuario atual.");
+  }
+
   const data = {
     usuarioId: userId,
     categoriaDespesaId: parsed.categoriaId,
@@ -228,6 +241,9 @@ export async function saveDespesa(formData: FormData) {
     valor: parseCurrencyToNumber(parsed.valor),
     dataVencimento: new Date(parsed.dataVencimento),
     dataPagamento: emptyToDate(parsed.dataPagamento),
+    formaPagamento: parsed.formaPagamento,
+    meioPagamento: parsed.formaPagamento === "a_vista" ? parsed.meioPagamento : null,
+    cartaoId: parsed.formaPagamento === "a_prazo" && parsed.cartaoId ? Number(parsed.cartaoId) : null,
     observacoes: emptyToNull(parsed.observacoes),
     status: parsed.status,
   };
@@ -240,7 +256,6 @@ export async function saveDespesa(formData: FormData) {
 
   revalidateAllPages();
 }
-
 export async function deleteDespesa(formData: FormData) {
   const { userId } = await requireCurrentUser();
   const id = parseRequiredId(formData);

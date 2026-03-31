@@ -55,7 +55,7 @@ describe("finance validations", () => {
     expect(result.success).toBe(false);
   });
 
-  it("aceita payload valido de despesa com categoria e tag obrigatorias", () => {
+  it("aceita despesa a vista com dinheiro", () => {
     const parsed = despesaSchema.parse({
       descricao: "Aluguel",
       valor: "1500.00",
@@ -63,22 +63,47 @@ describe("finance validations", () => {
       dataPagamento: "",
       categoriaId: 1,
       tagId: 3,
+      formaPagamento: "a_vista",
+      meioPagamento: "dinheiro",
+      cartaoId: "",
       observacoes: "",
       status: "pendente",
     });
 
-    expect(parsed.categoriaId).toBe(1);
-    expect(parsed.tagId).toBe(3);
+    expect(parsed.formaPagamento).toBe("a_vista");
+    expect(parsed.meioPagamento).toBe("dinheiro");
   });
 
-  it("rejeita despesa sem categoria", () => {
+  it("aceita despesa a prazo com cartao", () => {
+    const parsed = despesaSchema.parse({
+      descricao: "Notebook",
+      valor: "3500.00",
+      dataVencimento: "2026-03-24",
+      dataPagamento: "",
+      categoriaId: 1,
+      tagId: 3,
+      formaPagamento: "a_prazo",
+      meioPagamento: "",
+      cartaoId: "7",
+      observacoes: "",
+      status: "pendente",
+    });
+
+    expect(parsed.formaPagamento).toBe("a_prazo");
+    expect(parsed.cartaoId).toBe("7");
+  });
+
+  it("rejeita despesa a vista sem meio de pagamento", () => {
     const result = despesaSchema.safeParse({
       descricao: "Aluguel",
       valor: "1500.00",
       dataVencimento: "2026-03-24",
       dataPagamento: "",
-      categoriaId: "",
+      categoriaId: 1,
       tagId: 3,
+      formaPagamento: "a_vista",
+      meioPagamento: "",
+      cartaoId: "",
       observacoes: "",
       status: "pendente",
     });
@@ -86,14 +111,17 @@ describe("finance validations", () => {
     expect(result.success).toBe(false);
   });
 
-  it("rejeita despesa sem tag", () => {
+  it("rejeita despesa a prazo sem cartao", () => {
     const result = despesaSchema.safeParse({
-      descricao: "Aluguel",
-      valor: "1500.00",
+      descricao: "Notebook",
+      valor: "3500.00",
       dataVencimento: "2026-03-24",
       dataPagamento: "",
       categoriaId: 1,
-      tagId: "",
+      tagId: 3,
+      formaPagamento: "a_prazo",
+      meioPagamento: "",
+      cartaoId: "",
       observacoes: "",
       status: "pendente",
     });
