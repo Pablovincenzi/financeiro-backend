@@ -29,19 +29,40 @@ function groupByCategory<T extends { categoriaLabel: string; valor?: unknown; va
   return [...grouped.values()].sort((a, b) => b.total - a.total);
 }
 
+function groupByUser(
+  despesas: Array<{
+    valor: unknown;
+    usuario: { pessoa: { nomeCompleto: string } };
+  }>,
+) {
+  const grouped = new Map<string, { userName: string; total: number; count: number }>();
+
+  despesas.forEach((despesa) => {
+    const userName = despesa.usuario.pessoa.nomeCompleto;
+    const current = grouped.get(userName) ?? { userName, total: 0, count: 0 };
+
+    current.total += Number(despesa.valor);
+    current.count += 1;
+    grouped.set(userName, current);
+  });
+
+  return [...grouped.values()].sort((left, right) => right.total - left.total);
+}
+
 type PageProps = {
-  searchParams?: Promise<{ months?: string; tagId?: string; categoriaId?: string }>;
+  searchParams?: Promise<{ months?: string; tagId?: string; categoriaId?: string; usuarioId?: string }>;
 };
 
 export default async function RelatoriosPage({ searchParams }: PageProps) {
   const { userId } = await requireCurrentUser();
   const params = searchParams ? await searchParams : undefined;
   const selectedMonths = parseSelectedMonths(params?.months);
-  const monthOptions = buildRecentMonthOptions(8);
+  const monthOptions = buildRecentMonthOptions(8, 8);
   const monthRanges = buildMonthRanges(selectedMonths);
   const periodLabel = formatSelectedMonthsSummary(selectedMonths);
   const selectedTagId = params?.tagId ? Number(params.tagId) : null;
   const selectedCategoriaId = params?.categoriaId ? Number(params.categoriaId) : null;
+  const selectedUsuarioId = params?.usuarioId ? Number(params.usuarioId) : null;
 
   const accessibleCategoryWhere = {
     usuarios: {
@@ -56,9 +77,10 @@ export default async function RelatoriosPage({ searchParams }: PageProps) {
     categoriaDespesa: accessibleCategoryWhere,
     ...(selectedTagId ? { tagId: selectedTagId } : {}),
     ...(selectedCategoriaId ? { categoriaDespesaId: selectedCategoriaId } : {}),
+    ...(selectedUsuarioId ? { usuarioId: selectedUsuarioId } : {}),
   };
 
-  const [receitas, despesas, pix, recebiveis, compras, contasFixas, faturas, categorias, tags] = await Promise.all([
+  const [receitas, despesas, pix, recebiveis, compras, contasFixas, faturas, categorias, tags, usuarios] = await Promise.all([
     prisma.receita.findMany({ where: { usuarioId: userId, OR: monthRanges.map(({ start, end }) => ({ dataRecebimento: { gte: start, lte: end } })) }, orderBy: { dataRecebimento: "desc" } }),
     prisma.despesa.findMany({
       where: despesaFilter,
@@ -80,10 +102,23 @@ export default async function RelatoriosPage({ searchParams }: PageProps) {
     prisma.faturaCartao.findMany({ where: { usuarioId: userId, OR: monthRanges.map(({ start, end }) => ({ dataVencimento: { gte: start, lte: end } })) }, include: { cartao: true }, orderBy: { dataVencimento: "asc" } }),
     prisma.categoriaDespesa.findMany({ where: accessibleCategoryWhere, orderBy: { nome: "asc" } }),
     prisma.tag.findMany({ orderBy: { nome: "asc" } }),
+    prisma.usuario.findMany({
+      where: {
+        ativo: true,
+        categoriasDespesa: {
+          some: {
+            categoria: accessibleCategoryWhere,
+          },
+        },
+      },
+      include: { pessoa: true },
+      orderBy: { pessoa: { nomeCompleto: "asc" } },
+    }),
   ]);
 
   const receitasPorCategoria = groupByCategory(receitas.map((item) => ({ ...item, categoriaLabel: item.categoria ?? "Sem categoria" })));
   const despesasPorCategoria = groupByCategory(despesas.map((item) => ({ ...item, categoriaLabel: item.categoriaDespesa.nome })));
+  const despesasPorUsuario = groupByUser(despesas);
   const pixRecebidos = pix.filter((item) => item.tipo === "recebido");
   const pixEnviados = pix.filter((item) => item.tipo === "enviado");
 
@@ -96,6 +131,7 @@ export default async function RelatoriosPage({ searchParams }: PageProps) {
   const saldo = totalReceitas + totalPixRecebidos + totalRecebiveis - totalDespesas - totalPixEnviados - totalCompras;
   const selectedTagName = selectedTagId ? tags.find((item) => item.id === selectedTagId)?.nome ?? null : null;
   const selectedCategoriaName = selectedCategoriaId ? categorias.find((item) => item.id === selectedCategoriaId)?.nome ?? null : null;
+  const selectedUsuarioName = selectedUsuarioId ? usuarios.find((item) => item.id === selectedUsuarioId)?.pessoa.nomeCompleto ?? null : null;
   const uniqueUsers = [...new Set(despesas.map((despesa) => despesa.usuario.pessoa.nomeCompleto))];
 
   return (
@@ -107,7 +143,7 @@ export default async function RelatoriosPage({ searchParams }: PageProps) {
         pathname="/dashboard/relatorios"
         selectedMonths={selectedMonths}
         monthOptions={monthOptions}
-        extraParams={{ tagId: params?.tagId, categoriaId: params?.categoriaId }}
+        extraParams={{ tagId: params?.tagId, categoriaId: params?.categoriaId, usuarioId: params?.usuarioId }}
         metrics={[
           { label: "Entradas do periodo", value: formatCurrency(totalReceitas + totalPixRecebidos + totalRecebiveis), detail: "Receitas, PIX recebidos e recebiveis previstos." },
           { label: "Saidas do periodo", value: formatCurrency(totalDespesas + totalPixEnviados + totalCompras), detail: "Despesas compartilhadas por categoria, compras no cartao e PIX enviados." },
@@ -130,7 +166,7 @@ export default async function RelatoriosPage({ searchParams }: PageProps) {
           </Link>
         </div>
 
-        <form className="mt-6 grid gap-4 md:grid-cols-[1fr_1fr_auto]" method="get">
+        <form className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_auto]" method="get">
           <input type="hidden" name="months" value={selectedMonths.join(",")} />
           <div>
             <label className="mb-2 block text-sm font-medium">Tag</label>
@@ -150,6 +186,15 @@ export default async function RelatoriosPage({ searchParams }: PageProps) {
               ))}
             </select>
           </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium">Usuario</label>
+            <select name="usuarioId" defaultValue={params?.usuarioId ?? ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent">
+              <option value="">Todos os usuarios</option>
+              {usuarios.map((usuario) => (
+                <option key={usuario.id} value={usuario.id}>{usuario.pessoa.nomeCompleto}</option>
+              ))}
+            </select>
+          </div>
           <button className="rounded-2xl bg-accent px-5 py-3 text-sm font-semibold text-white transition hover:bg-accent-strong md:self-end">
             Aplicar filtros
           </button>
@@ -158,6 +203,7 @@ export default async function RelatoriosPage({ searchParams }: PageProps) {
         <div className="mt-4 flex flex-wrap gap-2 text-sm text-muted">
           <span className="rounded-full bg-surface-strong px-3 py-1">Tag: {selectedTagName ?? "Todas"}</span>
           <span className="rounded-full bg-surface-strong px-3 py-1">Categoria: {selectedCategoriaName ?? "Todas"}</span>
+          <span className="rounded-full bg-surface-strong px-3 py-1">Usuario: {selectedUsuarioName ?? "Todos"}</span>
           <span className="rounded-full bg-surface-strong px-3 py-1">Despesas encontradas: {despesas.length}</span>
           <span className="rounded-full bg-surface-strong px-3 py-1">Usuarios no recorte: {uniqueUsers.length}</span>
         </div>
@@ -241,6 +287,29 @@ export default async function RelatoriosPage({ searchParams }: PageProps) {
           </div>
         </article>
       </div>
+
+      <article className="rounded-[1.75rem] border border-border bg-surface px-6 py-6">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-muted">Despesas por usuario</p>
+            <h2 className="mt-2 text-2xl font-semibold">Totais cadastrados no periodo</h2>
+          </div>
+          <span className="rounded-full bg-surface-strong px-3 py-1 text-sm text-muted">{despesasPorUsuario.length} usuarios</span>
+        </div>
+        <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {despesasPorUsuario.length === 0 ? (
+            <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-sm text-muted">Nenhuma despesa encontrada para os filtros atuais.</p>
+          ) : (
+            despesasPorUsuario.map((item) => (
+              <div key={item.userName} className="rounded-2xl border border-border px-4 py-4">
+                <strong className="block text-base text-slate-900">{item.userName}</strong>
+                <span className="mt-1 block text-sm text-muted">{item.count} despesas cadastradas</span>
+                <strong className="mt-3 block text-2xl text-slate-900">{formatCurrency(item.total)}</strong>
+              </div>
+            ))
+          )}
+        </div>
+      </article>
 
       <DashboardListPanel title="Despesas detalhadas por categoria" totalLabel={formatCurrency(totalDespesas)}>
         {despesas.length === 0 ? (

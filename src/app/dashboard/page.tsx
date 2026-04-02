@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { DashboardPeriodHeader } from "@/components/dashboard/dashboard-period-header";
 import { requireCurrentUser } from "@/lib/auth";
 import {
   buildMonthRanges,
@@ -9,23 +10,63 @@ import {
   parseSelectedMonths,
 } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
-import { DashboardPeriodHeader } from "@/components/dashboard/dashboard-period-header";
 
 type PageProps = {
   searchParams?: Promise<{ months?: string }>;
 };
 
+function groupExpensesByUser(
+  despesas: Array<{
+    valor: unknown;
+    usuario: { pessoa: { nomeCompleto: string } };
+  }>,
+) {
+  const grouped = new Map<string, { userName: string; total: number; count: number }>();
+
+  despesas.forEach((despesa) => {
+    const userName = despesa.usuario.pessoa.nomeCompleto;
+    const current = grouped.get(userName) ?? { userName, total: 0, count: 0 };
+
+    current.total += Number(despesa.valor);
+    current.count += 1;
+    grouped.set(userName, current);
+  });
+
+  return [...grouped.values()].sort((left, right) => right.total - left.total);
+}
+
 export default async function DashboardPage({ searchParams }: PageProps) {
   const { userId } = await requireCurrentUser();
   const params = searchParams ? await searchParams : undefined;
   const selectedMonths = parseSelectedMonths(params?.months);
-  const monthOptions = buildRecentMonthOptions(6);
+  const monthOptions = buildRecentMonthOptions(6, 8);
   const monthRanges = buildMonthRanges(selectedMonths);
   const periodLabel = formatSelectedMonthsSummary(selectedMonths);
+  const accessibleCategoryWhere = {
+    usuarios: {
+      some: {
+        usuarioId: userId,
+      },
+    },
+  };
 
-  const [receitas, despesas, contasFixas, cartoes, compras, faturas, pixTransacoes, recebiveis] = await Promise.all([
+  const [receitas, despesas, despesasCompartilhadas, contasFixas, cartoes, compras, faturas, pixTransacoes, recebiveis] = await Promise.all([
     prisma.receita.findMany({ where: { usuarioId: userId, OR: monthRanges.map(({ start, end }) => ({ dataRecebimento: { gte: start, lte: end } })) } }),
     prisma.despesa.findMany({ where: { usuarioId: userId, OR: monthRanges.map(({ start, end }) => ({ dataVencimento: { gte: start, lte: end } })) } }),
+    prisma.despesa.findMany({
+      where: {
+        OR: monthRanges.map(({ start, end }) => ({ dataVencimento: { gte: start, lte: end } })),
+        categoriaDespesa: accessibleCategoryWhere,
+      },
+      include: {
+        usuario: {
+          include: {
+            pessoa: true,
+          },
+        },
+      },
+      orderBy: [{ valor: "desc" }, { dataVencimento: "asc" }],
+    }),
     prisma.contaFixa.findMany({ where: { usuarioId: userId, ativa: true } }),
     prisma.cartao.findMany({ where: { usuarioId: userId, ativo: true } }),
     prisma.compraCartao.findMany({ where: { usuarioId: userId, OR: monthRanges.map(({ start, end }) => ({ dataCompra: { gte: start, lte: end } })) } }),
@@ -45,6 +86,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const entradas = totalReceitas + totalPixRecebidos + totalRecebiveis;
   const saidas = totalDespesas + totalCompras + totalPixEnviados + totalContasFixas;
   const saldoProjetado = entradas - saidas;
+  const despesasPorUsuario = groupExpensesByUser(despesasCompartilhadas);
 
   return (
     <section className="grid gap-4">
@@ -121,6 +163,29 @@ export default async function DashboardPage({ searchParams }: PageProps) {
           </div>
         </aside>
       </div>
+
+      <article className="rounded-[1.75rem] border border-border bg-surface px-6 py-6">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-muted">Despesas por usuario</p>
+            <h2 className="mt-2 text-2xl font-semibold">Totais cadastrados no periodo</h2>
+          </div>
+          <span className="rounded-full bg-surface-strong px-3 py-1 text-sm text-muted">{despesasPorUsuario.length} usuarios</span>
+        </div>
+        <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {despesasPorUsuario.length === 0 ? (
+            <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-sm text-muted">Nenhuma despesa compartilhada encontrada para os meses selecionados.</p>
+          ) : (
+            despesasPorUsuario.map((item) => (
+              <div key={item.userName} className="rounded-2xl border border-border px-4 py-4">
+                <strong className="block text-base text-slate-900">{item.userName}</strong>
+                <span className="mt-1 block text-sm text-muted">{item.count} despesas cadastradas</span>
+                <strong className="mt-3 block text-2xl text-slate-900">{formatCurrency(item.total)}</strong>
+              </div>
+            ))
+          )}
+        </div>
+      </article>
     </section>
   );
 }
