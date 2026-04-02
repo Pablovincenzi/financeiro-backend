@@ -93,6 +93,25 @@ describe("finance validations", () => {
     expect(parsed.cartaoId).toBe("7");
   });
 
+  it("aceita despesa a prazo quando meio de pagamento nao vem no form", () => {
+    const parsed = despesaSchema.parse({
+      descricao: "Notebook",
+      valor: "3500.00",
+      dataVencimento: "2026-03-24",
+      dataPagamento: "",
+      categoriaId: 1,
+      tagId: 3,
+      formaPagamento: "a_prazo",
+      meioPagamento: null,
+      cartaoId: "7",
+      observacoes: "",
+      status: "pendente",
+    });
+
+    expect(parsed.formaPagamento).toBe("a_prazo");
+    expect(parsed.meioPagamento).toBeNull();
+  });
+
   it("rejeita despesa a vista sem meio de pagamento", () => {
     const result = despesaSchema.safeParse({
       descricao: "Aluguel",

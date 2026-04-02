@@ -40,8 +40,8 @@ export const despesaSchema = z
     categoriaId: z.coerce.number().int().positive("Selecione uma categoria."),
     tagId: requiredTag,
     formaPagamento: z.enum(["a_vista", "a_prazo"], "Selecione a forma de pagamento."),
-    meioPagamento: z.enum(["dinheiro", "pix"]).optional().or(z.literal("")),
-    cartaoId: z.string().trim().optional().or(z.literal("")),
+    meioPagamento: z.enum(["dinheiro", "pix"]).nullish().or(z.literal("")),
+    cartaoId: z.string().trim().nullish().or(z.literal("")),
     observacoes: optionalText,
     status: z.enum(["pendente", "paga"]).default("pendente"),
   })
