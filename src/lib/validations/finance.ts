@@ -6,13 +6,16 @@ const currencyString = z
   .string()
   .trim()
   .min(1, moneyMessage)
-  .refine((value) => /^\d+(?:[\.,]\d{1,2})?$/.test(value.replace(/\s/g, "")), moneyMessage)
+  .refine((value) => /^(?:\d+|\d{1,3}(?:\.\d{3})+)(?:,\d{1,2}|\.\d{1,2})?$/.test(value.replace(/\s/g, "")), moneyMessage)
   .refine((value) => Number.parseFloat(value.replace(/\./g, "").replace(",", ".")) > 0, "O valor deve ser maior que zero.");
 
 const optionalText = z.string().trim().max(500).optional().or(z.literal(""));
 const optionalShort = z.string().trim().max(120).optional().or(z.literal(""));
 const optionalCategory = z.string().trim().max(80).optional().or(z.literal(""));
 const requiredTag = z.coerce.number().int().positive("Selecione uma tag.");
+const parcelasSchema = z
+  .union([z.coerce.number().int().min(1, "Informe ao menos uma parcela.").max(120, "Limite maximo de 120 parcelas."), z.literal(""), z.null(), z.undefined()])
+  .transform((value) => (value === "" || value == null ? 1 : value));
 const dateString = (message: string) =>
   z
     .string()
@@ -26,6 +29,7 @@ export const receitaSchema = z.object({
   dataRecebimento: dateString("Informe a data de recebimento."),
   categoria: optionalCategory,
   tagId: requiredTag,
+  quantidadeParcelas: parcelasSchema,
   observacoes: optionalText,
   status: z.enum(["prevista", "recebida"]).default("prevista"),
 });
@@ -42,6 +46,7 @@ export const despesaSchema = z
     formaPagamento: z.enum(["a_vista", "a_prazo"], "Selecione a forma de pagamento."),
     meioPagamento: z.enum(["dinheiro", "pix"]).nullish().or(z.literal("")),
     cartaoId: z.string().trim().nullish().or(z.literal("")),
+    quantidadeParcelas: parcelasSchema,
     observacoes: optionalText,
     status: z.enum(["pendente", "paga"]).default("pendente"),
   })

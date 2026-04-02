@@ -34,11 +34,28 @@ describe("finance validations", () => {
       dataRecebimento: "2026-03-24",
       categoria: "Salario",
       tagId: 2,
+      quantidadeParcelas: 3,
       observacoes: "",
       status: "recebida",
     });
 
     expect(parsed.tagId).toBe(2);
+    expect(parsed.quantidadeParcelas).toBe(3);
+  });
+
+  it("assume 1 parcela quando o campo nao vem no formulario de receita", () => {
+    const parsed = receitaSchema.parse({
+      descricao: "Salario",
+      valor: "4500.00",
+      dataRecebimento: "2026-03-24",
+      categoria: "Salario",
+      tagId: 2,
+      quantidadeParcelas: null,
+      observacoes: "",
+      status: "recebida",
+    });
+
+    expect(parsed.quantidadeParcelas).toBe(1);
   });
 
   it("rejeita receita sem tag", () => {
@@ -55,6 +72,25 @@ describe("finance validations", () => {
     expect(result.success).toBe(false);
   });
 
+  it("aceita valor com mascara brasileira", () => {
+    const parsed = despesaSchema.parse({
+      descricao: "Aluguel",
+      valor: "1.500,00",
+      dataVencimento: "2026-03-24",
+      dataPagamento: "",
+      categoriaId: 1,
+      tagId: 3,
+      formaPagamento: "a_vista",
+      meioPagamento: "dinheiro",
+      cartaoId: "",
+      quantidadeParcelas: 1,
+      observacoes: "",
+      status: "pendente",
+    });
+
+    expect(parsed.valor).toBe("1.500,00");
+  });
+
   it("aceita despesa a vista com dinheiro", () => {
     const parsed = despesaSchema.parse({
       descricao: "Aluguel",
@@ -66,12 +102,14 @@ describe("finance validations", () => {
       formaPagamento: "a_vista",
       meioPagamento: "dinheiro",
       cartaoId: "",
+      quantidadeParcelas: 5,
       observacoes: "",
       status: "pendente",
     });
 
     expect(parsed.formaPagamento).toBe("a_vista");
     expect(parsed.meioPagamento).toBe("dinheiro");
+    expect(parsed.quantidadeParcelas).toBe(5);
   });
 
   it("aceita despesa a prazo com cartao", () => {
@@ -85,12 +123,14 @@ describe("finance validations", () => {
       formaPagamento: "a_prazo",
       meioPagamento: "",
       cartaoId: "7",
+      quantidadeParcelas: 7,
       observacoes: "",
       status: "pendente",
     });
 
     expect(parsed.formaPagamento).toBe("a_prazo");
     expect(parsed.cartaoId).toBe("7");
+    expect(parsed.quantidadeParcelas).toBe(7);
   });
 
   it("aceita despesa a prazo quando meio de pagamento nao vem no form", () => {
@@ -104,12 +144,14 @@ describe("finance validations", () => {
       formaPagamento: "a_prazo",
       meioPagamento: null,
       cartaoId: "7",
+      quantidadeParcelas: null,
       observacoes: "",
       status: "pendente",
     });
 
     expect(parsed.formaPagamento).toBe("a_prazo");
     expect(parsed.meioPagamento).toBeNull();
+    expect(parsed.quantidadeParcelas).toBe(1);
   });
 
   it("rejeita despesa a vista sem meio de pagamento", () => {

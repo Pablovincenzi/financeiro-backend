@@ -3,6 +3,7 @@ import Link from "next/link";
 import { deletePix, savePix } from "@/app/dashboard/finance-actions";
 import { DashboardListPanel } from "@/components/dashboard/dashboard-list-panel";
 import { DashboardPeriodHeader } from "@/components/dashboard/dashboard-period-header";
+import { MoneyInput } from "@/components/dashboard/money-input";
 import { requireCurrentUser } from "@/lib/auth";
 import {
   buildMonthRanges,
@@ -81,7 +82,7 @@ export default async function PixPage({ searchParams }: PageProps) {
               </div>
               <div>
                 <label className="mb-2 block text-sm font-medium">Valor</label>
-                <input name="valor" defaultValue={pixEmEdicao ? Number(pixEmEdicao.valor).toFixed(2) : ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" required />
+                <MoneyInput name="valor" defaultValue={pixEmEdicao ? Number(pixEmEdicao.valor) : ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" required />
               </div>
             </div>
             <div>
@@ -119,7 +120,7 @@ export default async function PixPage({ searchParams }: PageProps) {
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                   <div>
                     <h3 className="text-lg font-semibold">{pix.descricao}</h3>
-                    <p className="mt-1 text-sm text-muted">{pix.tipo} · {formatDate(pix.dataPix)} · {pix.categoria ?? "Sem categoria"}</p>
+                    <p className="mt-1 text-sm text-muted">{pix.tipo} Ã‚Â· {formatDate(pix.dataPix)} Ã‚Â· {pix.categoria ?? "Sem categoria"}</p>
                     <p className="mt-1 text-sm text-muted">{pix.conta ?? "Sem conta informada"}</p>
                     {pix.observacoes ? <p className="mt-2 text-sm text-muted">{pix.observacoes}</p> : null}
                   </div>

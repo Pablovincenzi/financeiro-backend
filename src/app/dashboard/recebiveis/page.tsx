@@ -1,6 +1,7 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 
 import { deleteRecebivel, saveRecebivel } from "@/app/dashboard/finance-actions";
+import { MoneyInput } from "@/components/dashboard/money-input";
 import { requireCurrentUser } from "@/lib/auth";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
@@ -40,7 +41,7 @@ export default async function RecebiveisPage({ searchParams }: PageProps) {
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <label className="mb-2 block text-sm font-medium">Valor previsto</label>
-              <input name="valorPrevisto" defaultValue={recebivelEmEdicao ? Number(recebivelEmEdicao.valorPrevisto).toFixed(2) : ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" required />
+              <MoneyInput name="valorPrevisto" defaultValue={recebivelEmEdicao ? Number(recebivelEmEdicao.valorPrevisto) : ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" required />
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium">Origem</label>
@@ -94,8 +95,8 @@ export default async function RecebiveisPage({ searchParams }: PageProps) {
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                   <div>
                     <h3 className="text-lg font-semibold">{recebivel.descricao}</h3>
-                    <p className="mt-1 text-sm text-muted">{recebivel.origem ?? "Sem origem"} · previsto para {formatDate(recebivel.dataEsperada)} · {recebivel.status}</p>
-                    <p className="mt-1 text-sm text-muted">{recebivel.categoria ?? "Sem categoria"}{recebivel.dataRecebimento ? ` · recebido em ${formatDate(recebivel.dataRecebimento)}` : ""}</p>
+                    <p className="mt-1 text-sm text-muted">{recebivel.origem ?? "Sem origem"} Â· previsto para {formatDate(recebivel.dataEsperada)} Â· {recebivel.status}</p>
+                    <p className="mt-1 text-sm text-muted">{recebivel.categoria ?? "Sem categoria"}{recebivel.dataRecebimento ? ` Â· recebido em ${formatDate(recebivel.dataRecebimento)}` : ""}</p>
                     {recebivel.observacoes ? <p className="mt-2 text-sm text-muted">{recebivel.observacoes}</p> : null}
                   </div>
                   <div className="flex flex-col items-start gap-3 lg:items-end">

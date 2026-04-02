@@ -3,6 +3,7 @@ import Link from "next/link";
 import { deleteCompraCartao, saveCompraCartao } from "@/app/dashboard/finance-actions";
 import { DashboardListPanel } from "@/components/dashboard/dashboard-list-panel";
 import { DashboardPeriodHeader } from "@/components/dashboard/dashboard-period-header";
+import { MoneyInput } from "@/components/dashboard/money-input";
 import { requireCurrentUser } from "@/lib/auth";
 import {
   buildMonthRanges,
@@ -87,7 +88,7 @@ export default async function ComprasCartaoPage({ searchParams }: PageProps) {
                 <label className="mb-2 block text-sm font-medium">Fatura</label>
                 <select name="faturaId" defaultValue={compraEmEdicao?.faturaId ?? ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent">
                   <option value="">Sem vinculo</option>
-                  {faturas.map((fatura) => <option key={fatura.id} value={fatura.id}>{fatura.competencia} · {fatura.status}</option>)}
+                  {faturas.map((fatura) => <option key={fatura.id} value={fatura.id}>{fatura.competencia} Ã‚Â· {fatura.status}</option>)}
                 </select>
               </div>
             </div>
@@ -98,7 +99,7 @@ export default async function ComprasCartaoPage({ searchParams }: PageProps) {
             <div className="grid gap-4 md:grid-cols-3">
               <div>
                 <label className="mb-2 block text-sm font-medium">Valor</label>
-                <input name="valor" defaultValue={compraEmEdicao ? Number(compraEmEdicao.valor).toFixed(2) : ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" required />
+                <MoneyInput name="valor" defaultValue={compraEmEdicao ? Number(compraEmEdicao.valor) : ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" required />
               </div>
               <div>
                 <label className="mb-2 block text-sm font-medium">Data da compra</label>
@@ -133,8 +134,8 @@ export default async function ComprasCartaoPage({ searchParams }: PageProps) {
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                   <div>
                     <h3 className="text-lg font-semibold">{compra.descricao}</h3>
-                    <p className="mt-1 text-sm text-muted">{compra.cartao.nome} · {formatDate(compra.dataCompra)} · {compra.status}</p>
-                    <p className="mt-1 text-sm text-muted">{compra.categoria ?? "Sem categoria"}{compra.fatura ? ` · fatura ${compra.fatura.competencia}` : ""}</p>
+                    <p className="mt-1 text-sm text-muted">{compra.cartao.nome} Ã‚Â· {formatDate(compra.dataCompra)} Ã‚Â· {compra.status}</p>
+                    <p className="mt-1 text-sm text-muted">{compra.categoria ?? "Sem categoria"}{compra.fatura ? ` Ã‚Â· fatura ${compra.fatura.competencia}` : ""}</p>
                     {compra.observacoes ? <p className="mt-2 text-sm text-muted">{compra.observacoes}</p> : null}
                   </div>
                   <div className="flex flex-col items-start gap-3 lg:items-end">

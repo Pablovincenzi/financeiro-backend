@@ -1,7 +1,9 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import {
+  addMonths,
   buildMonthRange,
+  buildRecentMonthOptions,
   currentMonthValue,
   formatCurrency,
   formatMonthLabel,
@@ -26,11 +28,24 @@ describe("format helpers", () => {
     expect(end.getDate()).toBe(31);
   });
 
+  it("soma meses preservando o ultimo dia util do mes", () => {
+    const next = addMonths(new Date("2026-01-31"), 1);
+    expect(next.getFullYear()).toBe(2026);
+    expect(next.getMonth()).toBe(1);
+    expect(next.getDate()).toBe(28);
+  });
+
   it("gera valor mensal atual no formato AAAA-MM", () => {
     expect(currentMonthValue()).toMatch(/^\d{4}-\d{2}$/);
   });
 
   it("formata rotulo mensal", () => {
     expect(formatMonthLabel("2026-03").toLowerCase()).toContain("2026");
+  });
+
+  it("gera opcoes com meses futuros", () => {
+    const options = buildRecentMonthOptions(2, 3);
+    expect(options).toHaveLength(5);
+    expect(options[0].value >= currentMonthValue()).toBe(true);
   });
 });

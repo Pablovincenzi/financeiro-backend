@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { MoneyInput } from "@/components/dashboard/money-input";
+
 type Option = {
   id: number;
   nome: string;
@@ -30,6 +32,7 @@ type ExpenseFormProps = {
 
 export function ExpenseForm({ expense, categorias, tags, cartoes, action }: ExpenseFormProps) {
   const [formaPagamento, setFormaPagamento] = useState(expense?.formaPagamento ?? "a_vista");
+  const isEditing = Boolean(expense?.id);
 
   return (
     <form action={action} className="mt-6 space-y-4">
@@ -43,7 +46,7 @@ export function ExpenseForm({ expense, categorias, tags, cartoes, action }: Expe
       <div className="grid gap-4 md:grid-cols-2">
         <div>
           <label className="mb-2 block text-sm font-medium">Valor</label>
-          <input name="valor" defaultValue={expense?.valor != null ? expense.valor.toFixed(2) : ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" placeholder="299.90" required />
+          <MoneyInput name="valor" defaultValue={expense?.valor ?? ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" placeholder="299,90" required />
         </div>
         <div>
           <label className="mb-2 block text-sm font-medium">Data de vencimento</label>
@@ -84,6 +87,14 @@ export function ExpenseForm({ expense, categorias, tags, cartoes, action }: Expe
           ))}
         </select>
       </div>
+
+      {!isEditing ? (
+        <div>
+          <label className="mb-2 block text-sm font-medium">Quantidade de parcelas</label>
+          <input type="number" name="quantidadeParcelas" min="1" max="120" defaultValue="1" className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" required />
+          <p className="mt-2 text-xs text-muted">Se informar mais de 1, o sistema criara despesas mensais futuras com a mesma configuracao.</p>
+        </div>
+      ) : null}
 
       <div>
         <label className="mb-2 block text-sm font-medium">Forma de pagamento</label>

@@ -52,6 +52,16 @@ export function buildMonthRange(value: string) {
   return { start, end };
 }
 
+export function addMonths(value: Date | string, months: number) {
+  const date = value instanceof Date ? new Date(value) : new Date(value);
+  const targetYear = date.getFullYear();
+  const targetMonth = date.getMonth() + months;
+  const lastDayOfTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+  const targetDay = Math.min(date.getDate(), lastDayOfTargetMonth);
+
+  return new Date(targetYear, targetMonth, targetDay);
+}
+
 export function buildMonthRanges(values: string[]) {
   return values.map((value) => buildMonthRange(value));
 }
@@ -62,11 +72,12 @@ export function currentMonthValue() {
   return `${now.getFullYear()}-${month}`;
 }
 
-export function buildRecentMonthOptions(total = 6): MonthOption[] {
+export function buildRecentMonthOptions(totalPastMonths = 6, totalFutureMonths = 6): MonthOption[] {
   const now = new Date();
 
-  return Array.from({ length: total }, (_, index) => {
-    const date = new Date(now.getFullYear(), now.getMonth() - index, 1);
+  return Array.from({ length: totalPastMonths + totalFutureMonths }, (_, index) => {
+    const offset = totalFutureMonths - 1 - index;
+    const date = new Date(now.getFullYear(), now.getMonth() + offset, 1);
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const value = `${date.getFullYear()}-${month}`;
 
@@ -74,7 +85,7 @@ export function buildRecentMonthOptions(total = 6): MonthOption[] {
       value,
       label: formatMonthLabel(value),
     };
-  });
+  }).sort((left, right) => right.value.localeCompare(left.value));
 }
 
 export function parseSelectedMonths(raw?: string | null, fallbackValue = currentMonthValue()) {

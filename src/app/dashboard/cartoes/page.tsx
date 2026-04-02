@@ -1,6 +1,7 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 
 import { deleteCartao, saveCartao } from "@/app/dashboard/finance-actions";
+import { MoneyInput } from "@/components/dashboard/money-input";
 import { requireCurrentUser } from "@/lib/auth";
 import { formatCurrency } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
@@ -54,7 +55,7 @@ export default async function CartoesPage({ searchParams }: PageProps) {
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium">Limite</label>
-              <input name="limite" defaultValue={cartaoEmEdicao?.limite ? Number(cartaoEmEdicao.limite).toFixed(2) : ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" placeholder="5000.00" />
+              <MoneyInput name="limite" defaultValue={cartaoEmEdicao?.limite ? Number(cartaoEmEdicao.limite) : ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" placeholder="5.000,00" />
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium">Ativo</label>
@@ -98,9 +99,9 @@ export default async function CartoesPage({ searchParams }: PageProps) {
                   <div>
                     <h3 className="text-lg font-semibold">{cartao.nome}</h3>
                     <p className="mt-1 text-sm text-muted">
-                      {cartao.bandeira ?? "Sem bandeira"} · final {cartao.ultimosDigitos} · fecha dia {cartao.diaFechamento} · vence dia {cartao.diaVencimento}
+                      {cartao.bandeira ?? "Sem bandeira"} Â· final {cartao.ultimosDigitos} Â· fecha dia {cartao.diaFechamento} Â· vence dia {cartao.diaVencimento}
                     </p>
-                    <p className="mt-1 text-sm text-muted">{cartao.apelido ?? "Sem apelido"} · {cartao.ativo ? "Ativo" : "Inativo"}</p>
+                    <p className="mt-1 text-sm text-muted">{cartao.apelido ?? "Sem apelido"} Â· {cartao.ativo ? "Ativo" : "Inativo"}</p>
                   </div>
                   <div className="flex flex-col items-start gap-3 lg:items-end">
                     <strong className="text-xl">{cartao.limite ? formatCurrency(Number(cartao.limite)) : "Sem limite informado"}</strong>

@@ -84,7 +84,7 @@ Regras:
 
 - cada registro pertence ao usuario autenticado
 - toda despesa deve possuir uma categoria cadastrada
-- receitas e despesas podem possuir uma tag para classificacao macro
+- receitas e despesas podem possuir uma tag para classificacao macro`r`n- receitas e despesas podem ser geradas em recorrencia mensal a partir de uma quantidade de parcelas, criando lancamentos futuros independentes
 - despesas diferenciam pagamento `a_vista` e `a_prazo`
 - pagamento `a_vista` aceita apenas `dinheiro` e `pix`
 - pagamento `a_prazo` deve apontar para um cartao ativo do usuario

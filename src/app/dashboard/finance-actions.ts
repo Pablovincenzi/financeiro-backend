@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { requireCurrentUser } from "@/lib/auth";
-import { parseCurrencyToNumber } from "@/lib/format";
+import { addMonths, parseCurrencyToNumber } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import {
   cartaoSchema,
@@ -81,17 +81,18 @@ export async function saveReceita(formData: FormData) {
     dataRecebimento: formData.get("dataRecebimento"),
     categoria: formData.get("categoria"),
     tagId: formData.get("tagId"),
+    quantidadeParcelas: formData.get("quantidadeParcelas"),
     observacoes: formData.get("observacoes"),
     status: formData.get("status"),
   });
 
   await ensureTagExists(parsed.tagId);
 
-  const data = {
+  const baseDate = new Date(parsed.dataRecebimento);
+  const baseData = {
     usuarioId: userId,
     descricao: parsed.descricao,
     valor: parseCurrencyToNumber(parsed.valor),
-    dataRecebimento: new Date(parsed.dataRecebimento),
     categoria: emptyToNull(parsed.categoria),
     tagId: parsed.tagId,
     observacoes: emptyToNull(parsed.observacoes),
@@ -99,9 +100,17 @@ export async function saveReceita(formData: FormData) {
   };
 
   if (parsed.id) {
-    await prisma.receita.updateMany({ where: { id: parsed.id, usuarioId: userId }, data });
+    await prisma.receita.updateMany({
+      where: { id: parsed.id, usuarioId: userId },
+      data: { ...baseData, dataRecebimento: baseDate },
+    });
   } else {
-    await prisma.receita.create({ data });
+    await prisma.receita.createMany({
+      data: Array.from({ length: parsed.quantidadeParcelas }, (_, index) => ({
+        ...baseData,
+        dataRecebimento: addMonths(baseDate, index),
+      })),
+    });
   }
 
   revalidateAllPages();
@@ -196,6 +205,7 @@ export async function saveDespesa(formData: FormData) {
     formaPagamento: formData.get("formaPagamento"),
     meioPagamento: formData.get("meioPagamento"),
     cartaoId: formData.get("cartaoId"),
+    quantidadeParcelas: formData.get("quantidadeParcelas"),
     observacoes: formData.get("observacoes"),
     status: formData.get("status"),
   });
@@ -233,14 +243,14 @@ export async function saveDespesa(formData: FormData) {
     throw new Error("Selecione um cartao ativo do usuario atual.");
   }
 
-  const data = {
+  const baseDueDate = new Date(parsed.dataVencimento);
+  const basePaymentDate = emptyToDate(parsed.dataPagamento);
+  const baseData = {
     usuarioId: userId,
     categoriaDespesaId: parsed.categoriaId,
     tagId: parsed.tagId,
     descricao: parsed.descricao,
     valor: parseCurrencyToNumber(parsed.valor),
-    dataVencimento: new Date(parsed.dataVencimento),
-    dataPagamento: emptyToDate(parsed.dataPagamento),
     formaPagamento: parsed.formaPagamento,
     meioPagamento: parsed.formaPagamento === "a_vista" ? parsed.meioPagamento : null,
     cartaoId: parsed.formaPagamento === "a_prazo" && parsed.cartaoId ? Number(parsed.cartaoId) : null,
@@ -249,13 +259,27 @@ export async function saveDespesa(formData: FormData) {
   };
 
   if (parsed.id) {
-    await prisma.despesa.updateMany({ where: { id: parsed.id, usuarioId: userId }, data });
+    await prisma.despesa.updateMany({
+      where: { id: parsed.id, usuarioId: userId },
+      data: {
+        ...baseData,
+        dataVencimento: baseDueDate,
+        dataPagamento: basePaymentDate,
+      },
+    });
   } else {
-    await prisma.despesa.create({ data });
+    await prisma.despesa.createMany({
+      data: Array.from({ length: parsed.quantidadeParcelas }, (_, index) => ({
+        ...baseData,
+        dataVencimento: addMonths(baseDueDate, index),
+        dataPagamento: basePaymentDate ? addMonths(basePaymentDate, index) : null,
+      })),
+    });
   }
 
   revalidateAllPages();
 }
+
 export async function deleteDespesa(formData: FormData) {
   const { userId } = await requireCurrentUser();
   const id = parseRequiredId(formData);

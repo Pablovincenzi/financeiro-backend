@@ -3,6 +3,7 @@ import Link from "next/link";
 import { deleteFatura, saveFatura } from "@/app/dashboard/finance-actions";
 import { DashboardListPanel } from "@/components/dashboard/dashboard-list-panel";
 import { DashboardPeriodHeader } from "@/components/dashboard/dashboard-period-header";
+import { MoneyInput } from "@/components/dashboard/money-input";
 import { requireCurrentUser } from "@/lib/auth";
 import {
   buildMonthRanges,
@@ -100,11 +101,11 @@ export default async function FaturasPage({ searchParams }: PageProps) {
             <div className="grid gap-4 md:grid-cols-3">
               <div>
                 <label className="mb-2 block text-sm font-medium">Valor total</label>
-                <input name="valorTotal" defaultValue={faturaEmEdicao ? Number(faturaEmEdicao.valorTotal).toFixed(2) : ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" required />
+                <MoneyInput name="valorTotal" defaultValue={faturaEmEdicao ? Number(faturaEmEdicao.valorTotal) : ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" required />
               </div>
               <div>
                 <label className="mb-2 block text-sm font-medium">Valor pago</label>
-                <input name="valorPago" defaultValue={faturaEmEdicao ? Number(faturaEmEdicao.valorPago).toFixed(2) : ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" />
+                <MoneyInput name="valorPago" defaultValue={faturaEmEdicao ? Number(faturaEmEdicao.valorPago) : ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" />
               </div>
               <div>
                 <label className="mb-2 block text-sm font-medium">Status</label>
@@ -127,8 +128,8 @@ export default async function FaturasPage({ searchParams }: PageProps) {
               <div key={fatura.id} className="rounded-2xl border border-border px-4 py-4">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                   <div>
-                    <h3 className="text-lg font-semibold">{fatura.cartao.nome} · {fatura.competencia}</h3>
-                    <p className="mt-1 text-sm text-muted">Fecha em {formatDate(fatura.dataFechamento)} · vence em {formatDate(fatura.dataVencimento)} · {fatura.status}</p>
+                    <h3 className="text-lg font-semibold">{fatura.cartao.nome} Ã‚Â· {fatura.competencia}</h3>
+                    <p className="mt-1 text-sm text-muted">Fecha em {formatDate(fatura.dataFechamento)} Ã‚Â· vence em {formatDate(fatura.dataVencimento)} Ã‚Â· {fatura.status}</p>
                     <p className="mt-1 text-sm text-muted">{fatura.compras.length} compras vinculadas</p>
                   </div>
                   <div className="flex flex-col items-start gap-3 lg:items-end">

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { deleteReceita, saveReceita } from "@/app/dashboard/finance-actions";
 import { DashboardListPanel } from "@/components/dashboard/dashboard-list-panel";
 import { DashboardPeriodHeader } from "@/components/dashboard/dashboard-period-header";
+import { MoneyInput } from "@/components/dashboard/money-input";
 import { requireCurrentUser } from "@/lib/auth";
 import {
   buildMonthRanges,
@@ -25,7 +26,7 @@ export default async function ReceitasPage({ searchParams }: PageProps) {
   const { userId } = await requireCurrentUser();
   const params = searchParams ? await searchParams : undefined;
   const selectedMonths = parseSelectedMonths(params?.months);
-  const monthOptions = buildRecentMonthOptions(6);
+  const monthOptions = buildRecentMonthOptions(6, 8);
   const monthRanges = buildMonthRanges(selectedMonths);
 
   const [receitas, tags] = await Promise.all([
@@ -53,7 +54,7 @@ export default async function ReceitasPage({ searchParams }: PageProps) {
       <DashboardPeriodHeader
         eyebrow="Receitas"
         title="Acompanhe entradas por varios meses sem perder a leitura do periodo."
-        description={`Consulte rapidamente o periodo de ${periodLabel} e combine meses para consolidar receitas previstas e recebidas.`}
+        description={`Consulte rapidamente o periodo de ${periodLabel} e combine meses passados e futuros para consolidar receitas previstas e recebidas.`}
         pathname="/dashboard/receitas"
         selectedMonths={selectedMonths}
         monthOptions={monthOptions}
@@ -90,13 +91,21 @@ export default async function ReceitasPage({ searchParams }: PageProps) {
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <label className="mb-2 block text-sm font-medium">Valor</label>
-                <input name="valor" defaultValue={receitaEmEdicao ? Number(receitaEmEdicao.valor).toFixed(2) : ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" placeholder="1500.00" required />
+                <MoneyInput name="valor" defaultValue={receitaEmEdicao ? Number(receitaEmEdicao.valor) : ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" placeholder="1.500,00" required />
               </div>
               <div>
                 <label className="mb-2 block text-sm font-medium">Data de recebimento</label>
                 <input type="date" name="dataRecebimento" defaultValue={receitaEmEdicao ? receitaEmEdicao.dataRecebimento.toISOString().slice(0, 10) : ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" required />
               </div>
             </div>
+
+            {!receitaEmEdicao ? (
+              <div>
+                <label className="mb-2 block text-sm font-medium">Quantidade de parcelas</label>
+                <input type="number" name="quantidadeParcelas" min="1" max="120" defaultValue="1" className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" required />
+                <p className="mt-2 text-xs text-muted">Se informar mais de 1, o sistema criara receitas mensais futuras com a mesma configuracao.</p>
+              </div>
+            ) : null}
 
             <div className="grid gap-4 md:grid-cols-2">
               <div>

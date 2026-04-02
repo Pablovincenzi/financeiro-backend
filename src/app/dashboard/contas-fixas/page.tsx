@@ -1,6 +1,7 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 
 import { deleteContaFixa, saveContaFixa } from "@/app/dashboard/finance-actions";
+import { MoneyInput } from "@/components/dashboard/money-input";
 import { requireCurrentUser } from "@/lib/auth";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
@@ -52,7 +53,7 @@ export default async function ContasFixasPage({ searchParams }: PageProps) {
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <label className="mb-2 block text-sm font-medium">Valor previsto</label>
-              <input name="valorPrevisto" defaultValue={contaEmEdicao ? Number(contaEmEdicao.valorPrevisto).toFixed(2) : ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" placeholder="120.00" required />
+              <MoneyInput name="valorPrevisto" defaultValue={contaEmEdicao ? Number(contaEmEdicao.valorPrevisto) : ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" placeholder="120,00" required />
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium">Dia de vencimento</label>
@@ -122,11 +123,11 @@ export default async function ContasFixasPage({ searchParams }: PageProps) {
                   <div>
                     <h3 className="text-lg font-semibold">{conta.descricao}</h3>
                     <p className="mt-1 text-sm text-muted">
-                      {conta.categoria ?? "Sem categoria"} · dia {conta.diaVencimento} · {conta.periodicidade}
+                      {conta.categoria ?? "Sem categoria"} Â· dia {conta.diaVencimento} Â· {conta.periodicidade}
                     </p>
                     <p className="mt-1 text-sm text-muted">
                       Status: {conta.ativa ? "Ativa" : "Inativa"}
-                      {conta.proximoVencimento ? ` · proximo vencimento ${formatDate(conta.proximoVencimento)}` : ""}
+                      {conta.proximoVencimento ? ` Â· proximo vencimento ${formatDate(conta.proximoVencimento)}` : ""}
                     </p>
                     {conta.observacoes ? (
                       <p className="mt-2 text-sm text-muted">{conta.observacoes}</p>
