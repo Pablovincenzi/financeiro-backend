@@ -27,7 +27,6 @@ export const receitaSchema = z.object({
   descricao: z.string().trim().min(3).max(150),
   valor: currencyString,
   dataRecebimento: dateString("Informe a data de recebimento."),
-  categoria: optionalCategory,
   tagId: requiredTag,
   quantidadeParcelas: parcelasSchema,
   observacoes: optionalText,

@@ -354,3 +354,59 @@ BEGIN
 END $$;
 
 ALTER TABLE despesas ALTER COLUMN categoria_id SET NOT NULL;
+WITH tags_canonicas AS (
+    SELECT
+        MIN(id) AS keep_id,
+        LOWER(TRIM(TRANSLATE(nome, 'ÁÀÃÂÄבאדגהÉÈÊËיטךכÍÌÎÏםלמןÓÒÕÔÖףעץפצÚÙÛÜתשûüÇח', 'AAAAAaaaaaEEEEeeeeIIIIiiiiOOOOOoooooUUUUuuuuCc'))) AS chave_normalizada
+    FROM tb_tag
+    GROUP BY LOWER(TRIM(TRANSLATE(nome, 'ÁÀÃÂÄבאדגהÉÈÊËיטךכÍÌÎÏםלמןÓÒÕÔÖףעץפצÚÙÛÜתשûüÇח', 'AAAAAaaaaaEEEEeeeeIIIIiiiiOOOOOoooooUUUUuuuuCc')))
+),
+tags_duplicadas AS (
+    SELECT duplicada.id AS duplicate_id, canonica.keep_id
+    FROM tb_tag duplicada
+    JOIN tags_canonicas canonica
+      ON canonica.chave_normalizada = LOWER(TRIM(TRANSLATE(duplicada.nome, 'ÁÀÃÂÄבאדגהÉÈÊËיטךכÍÌÎÏםלמןÓÒÕÔÖףעץפצÚÙÛÜתשûüÇח', 'AAAAAaaaaaEEEEeeeeIIIIiiiiOOOOOoooooUUUUuuuuCc')))
+    WHERE duplicada.id <> canonica.keep_id
+)
+UPDATE receitas r
+SET tag_id = duplicada.keep_id
+FROM tags_duplicadas duplicada
+WHERE r.tag_id = duplicada.duplicate_id;
+
+WITH tags_canonicas AS (
+    SELECT
+        MIN(id) AS keep_id,
+        LOWER(TRIM(TRANSLATE(nome, 'ÁÀÃÂÄבאדגהÉÈÊËיטךכÍÌÎÏםלמןÓÒÕÔÖףעץפצÚÙÛÜתשûüÇח', 'AAAAAaaaaaEEEEeeeeIIIIiiiiOOOOOoooooUUUUuuuuCc'))) AS chave_normalizada
+    FROM tb_tag
+    GROUP BY LOWER(TRIM(TRANSLATE(nome, 'ÁÀÃÂÄבאדגהÉÈÊËיטךכÍÌÎÏםלמןÓÒÕÔÖףעץפצÚÙÛÜתשûüÇח', 'AAAAAaaaaaEEEEeeeeIIIIiiiiOOOOOoooooUUUUuuuuCc')))
+),
+tags_duplicadas AS (
+    SELECT duplicada.id AS duplicate_id, canonica.keep_id
+    FROM tb_tag duplicada
+    JOIN tags_canonicas canonica
+      ON canonica.chave_normalizada = LOWER(TRIM(TRANSLATE(duplicada.nome, 'ÁÀÃÂÄבאדגהÉÈÊËיטךכÍÌÎÏםלמןÓÒÕÔÖףעץפצÚÙÛÜתשûüÇח', 'AAAAAaaaaaEEEEeeeeIIIIiiiiOOOOOoooooUUUUuuuuCc')))
+    WHERE duplicada.id <> canonica.keep_id
+)
+UPDATE despesas d
+SET tag_id = duplicada.keep_id
+FROM tags_duplicadas duplicada
+WHERE d.tag_id = duplicada.duplicate_id;
+
+WITH tags_canonicas AS (
+    SELECT
+        MIN(id) AS keep_id,
+        LOWER(TRIM(TRANSLATE(nome, 'ÁÀÃÂÄבאדגהÉÈÊËיטךכÍÌÎÏםלמןÓÒÕÔÖףעץפצÚÙÛÜתשûüÇח', 'AAAAAaaaaaEEEEeeeeIIIIiiiiOOOOOoooooUUUUuuuuCc'))) AS chave_normalizada
+    FROM tb_tag
+    GROUP BY LOWER(TRIM(TRANSLATE(nome, 'ÁÀÃÂÄבאדגהÉÈÊËיטךכÍÌÎÏםלמןÓÒÕÔÖףעץפצÚÙÛÜתשûüÇח', 'AAAAAaaaaaEEEEeeeeIIIIiiiiOOOOOoooooUUUUuuuuCc')))
+),
+tags_duplicadas AS (
+    SELECT duplicada.id AS duplicate_id
+    FROM tb_tag duplicada
+    JOIN tags_canonicas canonica
+      ON canonica.chave_normalizada = LOWER(TRIM(TRANSLATE(duplicada.nome, 'ÁÀÃÂÄבאדגהÉÈÊËיטךכÍÌÎÏםלמןÓÒÕÔÖףעץפצÚÙÛÜתשûüÇח', 'AAAAAaaaaaEEEEeeeeIIIIiiiiOOOOOoooooUUUUuuuuCc')))
+    WHERE duplicada.id <> canonica.keep_id
+)
+DELETE FROM tb_tag tag
+USING tags_duplicadas duplicada
+WHERE tag.id = duplicada.duplicate_id;
+

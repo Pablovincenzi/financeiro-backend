@@ -13,6 +13,7 @@ import {
   parseSelectedMonths,
 } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
+import { getUniqueTags } from "@/lib/tags";
 
 function groupByCategory<T extends { categoriaLabel: string; valor?: unknown; valorPrevisto?: unknown }>(items: T[]) {
   const grouped = new Map<string, { label: string; total: number; count: number }>();
@@ -92,8 +93,12 @@ export default async function RelatoriosPage({ searchParams }: PageProps) {
     ...(selectedUsuarioId ? { usuarioId: selectedUsuarioId } : {}),
   };
 
-  const [receitas, despesas, pix, recebiveis, compras, contasFixas, faturas, categorias, tags, usuarios] = await Promise.all([
-    prisma.receita.findMany({ where: { usuarioId: userId, OR: monthRanges.map(({ start, end }) => ({ dataRecebimento: { gte: start, lte: end } })) }, orderBy: { dataRecebimento: "desc" } }),
+  const [receitas, despesas, pix, recebiveis, compras, contasFixas, faturas, categorias, rawTags, usuarios] = await Promise.all([
+    prisma.receita.findMany({
+      where: { usuarioId: userId, OR: monthRanges.map(({ start, end }) => ({ dataRecebimento: { gte: start, lte: end } })) },
+      orderBy: { dataRecebimento: "desc" },
+      include: { tag: true },
+    }),
     prisma.despesa.findMany({
       where: despesaFilter,
       orderBy: [{ dataVencimento: "asc" }, { createdAt: "desc" }],
@@ -128,7 +133,8 @@ export default async function RelatoriosPage({ searchParams }: PageProps) {
     }),
   ]);
 
-  const receitasPorCategoria = groupByCategory(receitas.map((item) => ({ ...item, categoriaLabel: item.categoria ?? "Sem categoria" })));
+  const tags = getUniqueTags(rawTags);
+  const receitasPorTag = groupByCategory(receitas.map((item) => ({ ...item, categoriaLabel: item.tag?.nome ?? "Sem tag" })));
   const despesasPorCategoria = groupByCategory(despesas.map((item) => ({ ...item, categoriaLabel: item.categoriaDespesa.nome })));
   const despesasPorUsuario = groupByUser(despesas);
   const pixRecebidos = pix.filter((item) => item.tipo === "recebido");
@@ -232,9 +238,9 @@ export default async function RelatoriosPage({ searchParams }: PageProps) {
 
       <div className="grid gap-4 xl:grid-cols-2">
         <article className="rounded-[1.75rem] border border-border bg-surface px-6 py-6">
-          <p className="text-sm uppercase tracking-[0.2em] text-muted">Receitas por categoria</p>
+          <p className="text-sm uppercase tracking-[0.2em] text-muted">Receitas por tag</p>
           <div className="mt-5 space-y-3">
-            {receitasPorCategoria.length === 0 ? <p className="text-sm text-muted">Sem receitas no periodo selecionado.</p> : receitasPorCategoria.map((item) => (
+            {receitasPorTag.length === 0 ? <p className="text-sm text-muted">Sem receitas no periodo selecionado.</p> : receitasPorTag.map((item) => (
               <div key={item.label} className="flex items-center justify-between rounded-2xl border border-border px-4 py-3">
                 <div>
                   <strong className="block text-sm">{item.label}</strong>

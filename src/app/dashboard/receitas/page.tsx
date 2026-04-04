@@ -14,6 +14,7 @@ import {
   parseSelectedMonths,
 } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
+import { getUniqueTags } from "@/lib/tags";
 
 type PageProps = {
   searchParams?: Promise<{
@@ -29,7 +30,7 @@ export default async function ReceitasPage({ searchParams }: PageProps) {
   const monthOptions = buildRecentMonthOptions(6, 8);
   const monthRanges = buildMonthRanges(selectedMonths);
 
-  const [receitas, tags] = await Promise.all([
+  const [receitas, rawTags] = await Promise.all([
     prisma.receita.findMany({
       where: {
         usuarioId: userId,
@@ -43,6 +44,7 @@ export default async function ReceitasPage({ searchParams }: PageProps) {
     prisma.tag.findMany({ orderBy: { nome: "asc" } }),
   ]);
 
+  const tags = getUniqueTags(rawTags);
   const receitaEmEdicao = params?.edit ? receitas.find((item) => item.id === Number(params.edit)) : null;
   const totalReceitas = receitas.reduce((sum, item) => sum + Number(item.valor), 0);
   const totalRecebidas = receitas.filter((item) => item.status === "recebida").reduce((sum, item) => sum + Number(item.valor), 0);
@@ -107,20 +109,14 @@ export default async function ReceitasPage({ searchParams }: PageProps) {
               </div>
             ) : null}
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm font-medium">Categoria</label>
-                <input name="categoria" defaultValue={receitaEmEdicao?.categoria ?? ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" placeholder="Salario" />
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium">Tag</label>
-                <select name="tagId" defaultValue={receitaEmEdicao?.tagId ?? ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" required>
-                  <option value="" disabled>Selecione uma tag</option>
-                  {tags.map((tag) => (
-                    <option key={tag.id} value={tag.id}>{tag.nome}</option>
-                  ))}
-                </select>
-              </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium">Tag</label>
+              <select name="tagId" defaultValue={receitaEmEdicao?.tagId ?? ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" required>
+                <option value="" disabled>Selecione uma tag</option>
+                {tags.map((tag) => (
+                  <option key={tag.id} value={tag.id}>{tag.nome}</option>
+                ))}
+              </select>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
@@ -154,7 +150,7 @@ export default async function ReceitasPage({ searchParams }: PageProps) {
                   <div>
                     <h3 className="text-lg font-semibold">{receita.descricao}</h3>
                     <p className="mt-1 text-sm text-muted">
-                      {(receita.categoria ?? "Sem categoria")} | {receita.tag?.nome ?? "Sem tag"} | {formatDate(receita.dataRecebimento)} | {receita.status}
+                      {receita.tag?.nome ?? "Sem tag"} | {formatDate(receita.dataRecebimento)} | {receita.status}
                     </p>
                     {receita.observacoes ? <p className="mt-2 text-sm text-muted">{receita.observacoes}</p> : null}
                   </div>

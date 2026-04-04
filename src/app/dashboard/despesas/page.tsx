@@ -14,6 +14,7 @@ import {
   parseSelectedMonths,
 } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
+import { getUniqueTags } from "@/lib/tags";
 
 type PageProps = {
   searchParams?: Promise<{
@@ -45,7 +46,7 @@ export default async function DespesasPage({ searchParams }: PageProps) {
   const monthOptions = buildRecentMonthOptions(6);
   const monthRanges = buildMonthRanges(selectedMonths);
 
-  const [despesas, categorias, tags, cartoes] = await Promise.all([
+  const [despesas, categorias, rawTags, cartoes] = await Promise.all([
     prisma.despesa.findMany({
       where: {
         usuarioId: userId,
@@ -70,6 +71,7 @@ export default async function DespesasPage({ searchParams }: PageProps) {
     prisma.cartao.findMany({ where: { usuarioId: userId, ativo: true }, orderBy: { nome: "asc" } }),
   ]);
 
+  const tags = getUniqueTags(rawTags);
   const despesaEmEdicao = params?.edit ? despesas.find((item) => item.id === Number(params.edit)) : null;
   const totalDespesas = despesas.reduce((sum, item) => sum + Number(item.valor), 0);
   const totalPagas = despesas.filter((item) => item.status === "paga").reduce((sum, item) => sum + Number(item.valor), 0);
