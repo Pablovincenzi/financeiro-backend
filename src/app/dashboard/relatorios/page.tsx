@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { DashboardListPanel } from "@/components/dashboard/dashboard-list-panel";
 import { DashboardPeriodHeader } from "@/components/dashboard/dashboard-period-header";
+import { FilterMultiSelect } from "@/components/dashboard/filter-multi-select";
 import { requireCurrentUser } from "@/lib/auth";
 import {
   buildMonthRanges,
@@ -49,8 +50,19 @@ function groupByUser(
   return [...grouped.values()].sort((left, right) => right.total - left.total);
 }
 
+function parseSelectedNumericIds(value?: string) {
+  if (!value) {
+    return [] as number[];
+  }
+
+  return value
+    .split(",")
+    .map((item) => Number(item.trim()))
+    .filter((item) => Number.isInteger(item) && item > 0);
+}
+
 type PageProps = {
-  searchParams?: Promise<{ months?: string; tagId?: string; categoriaId?: string; usuarioId?: string }>;
+  searchParams?: Promise<{ months?: string; tagId?: string; categoriaIds?: string; usuarioId?: string }>;
 };
 
 export default async function RelatoriosPage({ searchParams }: PageProps) {
@@ -61,7 +73,7 @@ export default async function RelatoriosPage({ searchParams }: PageProps) {
   const monthRanges = buildMonthRanges(selectedMonths);
   const periodLabel = formatSelectedMonthsSummary(selectedMonths);
   const selectedTagId = params?.tagId ? Number(params.tagId) : null;
-  const selectedCategoriaId = params?.categoriaId ? Number(params.categoriaId) : null;
+  const selectedCategoriaIds = parseSelectedNumericIds(params?.categoriaIds);
   const selectedUsuarioId = params?.usuarioId ? Number(params.usuarioId) : null;
 
   const accessibleCategoryWhere = {
@@ -76,7 +88,7 @@ export default async function RelatoriosPage({ searchParams }: PageProps) {
     OR: monthRanges.map(({ start, end }) => ({ dataVencimento: { gte: start, lte: end } })),
     categoriaDespesa: accessibleCategoryWhere,
     ...(selectedTagId ? { tagId: selectedTagId } : {}),
-    ...(selectedCategoriaId ? { categoriaDespesaId: selectedCategoriaId } : {}),
+    ...(selectedCategoriaIds.length > 0 ? { categoriaDespesaId: { in: selectedCategoriaIds } } : {}),
     ...(selectedUsuarioId ? { usuarioId: selectedUsuarioId } : {}),
   };
 
@@ -130,7 +142,15 @@ export default async function RelatoriosPage({ searchParams }: PageProps) {
   const totalCompras = compras.reduce((sum, item) => sum + Number(item.valor), 0);
   const saldo = totalReceitas + totalPixRecebidos + totalRecebiveis - totalDespesas - totalPixEnviados - totalCompras;
   const selectedTagName = selectedTagId ? tags.find((item) => item.id === selectedTagId)?.nome ?? null : null;
-  const selectedCategoriaName = selectedCategoriaId ? categorias.find((item) => item.id === selectedCategoriaId)?.nome ?? null : null;
+  const selectedCategoryNames = categorias
+    .filter((item) => selectedCategoriaIds.includes(item.id))
+    .map((item) => item.nome);
+  const selectedCategorySummary =
+    selectedCategoryNames.length === 0
+      ? "Todas"
+      : selectedCategoryNames.length <= 2
+        ? selectedCategoryNames.join(", ")
+        : `${selectedCategoryNames.length} categorias`;
   const selectedUsuarioName = selectedUsuarioId ? usuarios.find((item) => item.id === selectedUsuarioId)?.pessoa.nomeCompleto ?? null : null;
   const uniqueUsers = [...new Set(despesas.map((despesa) => despesa.usuario.pessoa.nomeCompleto))];
 
@@ -143,7 +163,7 @@ export default async function RelatoriosPage({ searchParams }: PageProps) {
         pathname="/dashboard/relatorios"
         selectedMonths={selectedMonths}
         monthOptions={monthOptions}
-        extraParams={{ tagId: params?.tagId, categoriaId: params?.categoriaId, usuarioId: params?.usuarioId }}
+        extraParams={{ tagId: params?.tagId, categoriaIds: params?.categoriaIds, usuarioId: params?.usuarioId }}
         metrics={[
           { label: "Entradas do periodo", value: formatCurrency(totalReceitas + totalPixRecebidos + totalRecebiveis), detail: "Receitas, PIX recebidos e recebiveis previstos." },
           { label: "Saidas do periodo", value: formatCurrency(totalDespesas + totalPixEnviados + totalCompras), detail: "Despesas compartilhadas por categoria, compras no cartao e PIX enviados." },
@@ -166,7 +186,7 @@ export default async function RelatoriosPage({ searchParams }: PageProps) {
           </Link>
         </div>
 
-        <form className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_auto]" method="get">
+        <form className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-[1fr_1.25fr_1fr_auto]" method="get">
           <input type="hidden" name="months" value={selectedMonths.join(",")} />
           <div>
             <label className="mb-2 block text-sm font-medium">Tag</label>
@@ -178,13 +198,14 @@ export default async function RelatoriosPage({ searchParams }: PageProps) {
             </select>
           </div>
           <div>
-            <label className="mb-2 block text-sm font-medium">Categoria</label>
-            <select name="categoriaId" defaultValue={params?.categoriaId ?? ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent">
-              <option value="">Todas as categorias</option>
-              {categorias.map((categoria) => (
-                <option key={categoria.id} value={categoria.id}>{categoria.nome}</option>
-              ))}
-            </select>
+            <label className="mb-2 block text-sm font-medium">Categorias</label>
+            <FilterMultiSelect
+              name="categoriaIds"
+              options={categorias.map((categoria) => ({ id: categoria.id, label: categoria.nome }))}
+              defaultSelectedIds={selectedCategoriaIds.map(String)}
+              placeholder="Todas as categorias"
+              helperText="Selecione uma ou mais categorias para combinar no mesmo relatorio."
+            />
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium">Usuario</label>
@@ -202,7 +223,7 @@ export default async function RelatoriosPage({ searchParams }: PageProps) {
 
         <div className="mt-4 flex flex-wrap gap-2 text-sm text-muted">
           <span className="rounded-full bg-surface-strong px-3 py-1">Tag: {selectedTagName ?? "Todas"}</span>
-          <span className="rounded-full bg-surface-strong px-3 py-1">Categoria: {selectedCategoriaName ?? "Todas"}</span>
+          <span className="rounded-full bg-surface-strong px-3 py-1">Categorias: {selectedCategorySummary}</span>
           <span className="rounded-full bg-surface-strong px-3 py-1">Usuario: {selectedUsuarioName ?? "Todos"}</span>
           <span className="rounded-full bg-surface-strong px-3 py-1">Despesas encontradas: {despesas.length}</span>
           <span className="rounded-full bg-surface-strong px-3 py-1">Usuarios no recorte: {uniqueUsers.length}</span>
