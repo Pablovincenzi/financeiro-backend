@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { ManagedForm } from "@/components/dashboard/managed-form";
 import { MoneyInput } from "@/components/dashboard/money-input";
 
 type Option = {
@@ -35,7 +36,12 @@ export function ExpenseForm({ expense, categorias, tags, cartoes, action }: Expe
   const isEditing = Boolean(expense?.id);
 
   return (
-    <form action={action} className="mt-6 space-y-4">
+    <ManagedForm
+      action={action}
+      className="mt-6 space-y-4"
+      submitLabel={expense?.id ? "Salvar alteracoes" : "Cadastrar despesa"}
+      pendingLabel={expense?.id ? "Salvando despesa..." : "Cadastrando despesa..."}
+    >
       <input type="hidden" name="id" value={expense?.id ?? ""} />
 
       <div>
@@ -136,10 +142,6 @@ export function ExpenseForm({ expense, categorias, tags, cartoes, action }: Expe
         <label className="mb-2 block text-sm font-medium">Observacoes</label>
         <textarea name="observacoes" defaultValue={expense?.observacoes ?? ""} className="min-h-28 w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" />
       </div>
-
-      <button className="w-full rounded-2xl bg-accent px-4 py-3 text-sm font-semibold text-white transition hover:bg-accent-strong">
-        {expense?.id ? "Salvar alteracoes" : "Cadastrar despesa"}
-      </button>
-    </form>
+    </ManagedForm>
   );
 }

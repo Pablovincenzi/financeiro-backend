@@ -113,3 +113,16 @@ export async function requireCurrentUser() {
     userId: Number(session.user.id),
   };
 }
+
+export async function requireAdminUser() {
+  const { session, userId } = await requireCurrentUser();
+
+  if (session.user.nivelAcesso !== "administrador") {
+    throw new Error("Acesso restrito a administradores.");
+  }
+
+  return {
+    session,
+    userId,
+  };
+}

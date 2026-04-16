@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { deleteContaFixa, saveContaFixa } from "@/app/dashboard/finance-actions";
 import { MoneyInput } from "@/components/dashboard/money-input";
+import { ManagedForm } from "@/components/dashboard/managed-form";
 import { requireCurrentUser } from "@/lib/auth";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
@@ -42,7 +43,7 @@ export default async function ContasFixasPage({ searchParams }: PageProps) {
           ) : null}
         </div>
 
-        <form action={saveContaFixa} className="mt-6 space-y-4">
+        <ManagedForm action={saveContaFixa} className="mt-6 space-y-4" submitLabel={contaEmEdicao ? "Salvar alteracoes" : "Cadastrar conta fixa"} pendingLabel={contaEmEdicao ? "Salvando conta fixa..." : "Cadastrando conta fixa..."}>
           <input type="hidden" name="id" value={contaEmEdicao?.id ?? ""} />
 
           <div>
@@ -95,11 +96,7 @@ export default async function ContasFixasPage({ searchParams }: PageProps) {
             <label className="mb-2 block text-sm font-medium">Observacoes</label>
             <textarea name="observacoes" defaultValue={contaEmEdicao?.observacoes ?? ""} className="min-h-28 w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" />
           </div>
-
-          <button className="w-full rounded-2xl bg-accent px-4 py-3 text-sm font-semibold text-white transition hover:bg-accent-strong">
-            {contaEmEdicao ? "Salvar alteracoes" : "Cadastrar conta fixa"}
-          </button>
-        </form>
+        </ManagedForm>
       </article>
 
       <article className="rounded-[1.75rem] border border-border bg-surface px-6 py-6">

@@ -65,5 +65,17 @@ export const signUpSchema = z
     path: ["confirmPassword"],
   });
 
+export const passwordResetSchema = z
+  .object({
+    userId: z.coerce.number().int().positive().optional(),
+    password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres."),
+    confirmPassword: z.string().min(6, "Confirme a senha com pelo menos 6 caracteres."),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "As senhas nao conferem.",
+    path: ["confirmPassword"],
+  });
+
 export type SignInSchema = z.infer<typeof signInSchema>;
 export type SignUpSchema = z.infer<typeof signUpSchema>;
+export type PasswordResetSchema = z.infer<typeof passwordResetSchema>;

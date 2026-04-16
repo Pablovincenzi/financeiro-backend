@@ -4,6 +4,7 @@ import { deleteCompraCartao, saveCompraCartao } from "@/app/dashboard/finance-ac
 import { DashboardListPanel } from "@/components/dashboard/dashboard-list-panel";
 import { DashboardPeriodHeader } from "@/components/dashboard/dashboard-period-header";
 import { MoneyInput } from "@/components/dashboard/money-input";
+import { ManagedForm } from "@/components/dashboard/managed-form";
 import { requireCurrentUser } from "@/lib/auth";
 import {
   buildMonthRanges,
@@ -74,7 +75,7 @@ export default async function ComprasCartaoPage({ searchParams }: PageProps) {
             {compraEmEdicao ? <Link className="text-sm font-medium text-accent" href={`/dashboard/compras-cartao?months=${selectedMonths.join(",")}`}>Cancelar edicao</Link> : null}
           </div>
 
-          <form action={saveCompraCartao} className="mt-6 space-y-4">
+          <ManagedForm action={saveCompraCartao} className="mt-6 space-y-4" submitLabel={compraEmEdicao ? "Salvar alteracoes" : "Cadastrar compra"} pendingLabel={compraEmEdicao ? "Salvando compra..." : "Cadastrando compra..."}>
             <input type="hidden" name="id" value={compraEmEdicao?.id ?? ""} />
             <div className="grid gap-4 md:grid-cols-2">
               <div>
@@ -121,8 +122,7 @@ export default async function ComprasCartaoPage({ searchParams }: PageProps) {
               <label className="mb-2 block text-sm font-medium">Observacoes</label>
               <textarea name="observacoes" defaultValue={compraEmEdicao?.observacoes ?? ""} className="min-h-28 w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" />
             </div>
-            <button className="w-full rounded-2xl bg-accent px-4 py-3 text-sm font-semibold text-white transition hover:bg-accent-strong">{compraEmEdicao ? "Salvar alteracoes" : "Cadastrar compra"}</button>
-          </form>
+        </ManagedForm>
         </article>
 
         <DashboardListPanel title="Compras cadastradas" totalLabel={formatCurrency(totalCompras)}>
