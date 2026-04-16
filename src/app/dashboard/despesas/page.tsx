@@ -74,8 +74,8 @@ export default async function DespesasPage({ searchParams }: PageProps) {
   const tags = getUniqueTags(rawTags);
   const despesaEmEdicao = params?.edit ? despesas.find((item) => item.id === Number(params.edit)) : null;
   const totalDespesas = despesas.reduce((sum, item) => sum + Number(item.valor), 0);
-  const totalPagas = despesas.filter((item) => item.status === "paga").reduce((sum, item) => sum + Number(item.valor), 0);
-  const totalPendentes = despesas.filter((item) => item.status === "pendente").reduce((sum, item) => sum + Number(item.valor), 0);
+  const totalVista = despesas.filter((item) => item.formaPagamento === "a_vista").reduce((sum, item) => sum + Number(item.valor), 0);
+  const totalPrazo = despesas.filter((item) => item.formaPagamento === "a_prazo").reduce((sum, item) => sum + Number(item.valor), 0);
   const periodLabel = formatSelectedMonthsSummary(selectedMonths);
 
   return (
@@ -83,15 +83,15 @@ export default async function DespesasPage({ searchParams }: PageProps) {
       <DashboardPeriodHeader
         eyebrow="Despesas"
         title="Consolide gastos de varios meses em uma leitura unica do periodo."
-        description={`Compare rapidamente o comportamento das despesas em ${periodLabel} e acompanhe o que esta pago ou pendente.`}
+        description={`Compare rapidamente o comportamento das despesas em ${periodLabel} e acompanhe o peso dos pagamentos a vista e a prazo.`}
         pathname="/dashboard/despesas"
         selectedMonths={selectedMonths}
         monthOptions={monthOptions}
         extraParams={{ edit: params?.edit }}
         metrics={[
           { label: "Total do periodo", value: formatCurrency(totalDespesas), detail: "Soma das despesas listadas para os meses selecionados." },
-          { label: "Pagas", value: formatCurrency(totalPagas), detail: "Lancamentos ja quitados dentro do recorte atual." },
-          { label: "Pendentes", value: formatCurrency(totalPendentes), detail: "Valores ainda em aberto para os meses filtrados." },
+          { label: "A vista", value: formatCurrency(totalVista), detail: "Despesas pagas em dinheiro ou PIX dentro do periodo." },
+          { label: "A prazo", value: formatCurrency(totalPrazo), detail: "Despesas vinculadas a cartoes ativos no recorte atual." },
         ]}
       />
 
@@ -119,14 +119,12 @@ export default async function DespesasPage({ searchParams }: PageProps) {
               descricao: despesaEmEdicao.descricao,
               valor: Number(despesaEmEdicao.valor),
               dataVencimento: despesaEmEdicao.dataVencimento.toISOString().slice(0, 10),
-              dataPagamento: despesaEmEdicao.dataPagamento ? despesaEmEdicao.dataPagamento.toISOString().slice(0, 10) : "",
               categoriaId: despesaEmEdicao.categoriaDespesaId,
               tagId: despesaEmEdicao.tagId,
               formaPagamento: despesaEmEdicao.formaPagamento,
               meioPagamento: despesaEmEdicao.meioPagamento,
               cartaoId: despesaEmEdicao.cartaoId,
               observacoes: despesaEmEdicao.observacoes,
-              status: despesaEmEdicao.status,
             } : null}
           />
 
@@ -147,8 +145,7 @@ export default async function DespesasPage({ searchParams }: PageProps) {
                     <p className="mt-1 text-sm text-muted">
                       {despesa.categoriaDespesa.nome} | {despesa.tag?.nome ?? "Sem tag"} | {formatPaymentLabel(despesa)}
                     </p>
-                    <p className="mt-1 text-sm text-muted">Vence em {formatDate(despesa.dataVencimento)} | {despesa.status}</p>
-                    {despesa.dataPagamento ? <p className="mt-1 text-sm text-muted">Pago em {formatDate(despesa.dataPagamento)}</p> : null}
+                    <p className="mt-1 text-sm text-muted">Vence em {formatDate(despesa.dataVencimento)}</p>
                     {despesa.observacoes ? <p className="mt-2 text-sm text-muted">{despesa.observacoes}</p> : null}
                   </div>
                   <div className="flex flex-col items-start gap-3 lg:items-end">

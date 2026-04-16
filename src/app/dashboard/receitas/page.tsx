@@ -119,16 +119,6 @@ export default async function ReceitasPage({ searchParams }: PageProps) {
               </select>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm font-medium">Status</label>
-                <select name="status" defaultValue={receitaEmEdicao?.status ?? "prevista"} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent">
-                  <option value="prevista">Prevista</option>
-                  <option value="recebida">Recebida</option>
-                </select>
-              </div>
-            </div>
-
             <div>
               <label className="mb-2 block text-sm font-medium">Observacoes</label>
               <textarea name="observacoes" defaultValue={receitaEmEdicao?.observacoes ?? ""} className="min-h-28 w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" />

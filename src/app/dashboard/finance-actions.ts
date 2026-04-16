@@ -82,7 +82,6 @@ export async function saveReceita(formData: FormData) {
     tagId: formData.get("tagId"),
     quantidadeParcelas: formData.get("quantidadeParcelas"),
     observacoes: formData.get("observacoes"),
-    status: formData.get("status"),
   });
 
   await ensureTagExists(parsed.tagId);
@@ -94,7 +93,7 @@ export async function saveReceita(formData: FormData) {
     valor: parseCurrencyToNumber(parsed.valor),
     tagId: parsed.tagId,
     observacoes: emptyToNull(parsed.observacoes),
-    status: parsed.status,
+    status: "prevista",
   };
 
   if (parsed.id) {
@@ -197,7 +196,6 @@ export async function saveDespesa(formData: FormData) {
     descricao: formData.get("descricao"),
     valor: formData.get("valor"),
     dataVencimento: formData.get("dataVencimento"),
-    dataPagamento: formData.get("dataPagamento"),
     categoriaId: formData.get("categoriaId"),
     tagId: formData.get("tagId"),
     formaPagamento: formData.get("formaPagamento"),
@@ -205,7 +203,6 @@ export async function saveDespesa(formData: FormData) {
     cartaoId: formData.get("cartaoId"),
     quantidadeParcelas: formData.get("quantidadeParcelas"),
     observacoes: formData.get("observacoes"),
-    status: formData.get("status"),
   });
 
   const [categoriaPermitida, tag, cartao] = await Promise.all([
@@ -242,7 +239,6 @@ export async function saveDespesa(formData: FormData) {
   }
 
   const baseDueDate = new Date(parsed.dataVencimento);
-  const basePaymentDate = emptyToDate(parsed.dataPagamento);
   const baseData = {
     usuarioId: userId,
     categoriaDespesaId: parsed.categoriaId,
@@ -253,7 +249,7 @@ export async function saveDespesa(formData: FormData) {
     meioPagamento: parsed.formaPagamento === "a_vista" ? parsed.meioPagamento : null,
     cartaoId: parsed.formaPagamento === "a_prazo" && parsed.cartaoId ? Number(parsed.cartaoId) : null,
     observacoes: emptyToNull(parsed.observacoes),
-    status: parsed.status,
+    status: "pendente",
   };
 
   if (parsed.id) {
@@ -262,7 +258,6 @@ export async function saveDespesa(formData: FormData) {
       data: {
         ...baseData,
         dataVencimento: baseDueDate,
-        dataPagamento: basePaymentDate,
       },
     });
   } else {
@@ -270,7 +265,6 @@ export async function saveDespesa(formData: FormData) {
       data: Array.from({ length: parsed.quantidadeParcelas }, (_, index) => ({
         ...baseData,
         dataVencimento: addMonths(baseDueDate, index),
-        dataPagamento: basePaymentDate ? addMonths(basePaymentDate, index) : null,
       })),
     });
   }

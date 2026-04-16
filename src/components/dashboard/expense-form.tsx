@@ -15,14 +15,12 @@ type ExpenseFormProps = {
     descricao?: string;
     valor?: number;
     dataVencimento?: string;
-    dataPagamento?: string;
     categoriaId?: number;
     tagId?: number | null;
     formaPagamento?: string;
     meioPagamento?: string | null;
     cartaoId?: number | null;
     observacoes?: string | null;
-    status?: string;
   } | null;
   categorias: Option[];
   tags: Option[];
@@ -43,31 +41,6 @@ export function ExpenseForm({ expense, categorias, tags, cartoes, action }: Expe
         <input name="descricao" defaultValue={expense?.descricao ?? ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" required />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <div>
-          <label className="mb-2 block text-sm font-medium">Valor</label>
-          <MoneyInput name="valor" defaultValue={expense?.valor ?? ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" placeholder="299,90" required />
-        </div>
-        <div>
-          <label className="mb-2 block text-sm font-medium">Data de vencimento</label>
-          <input type="date" name="dataVencimento" defaultValue={expense?.dataVencimento ?? ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" required />
-        </div>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <div>
-          <label className="mb-2 block text-sm font-medium">Data de pagamento</label>
-          <input type="date" name="dataPagamento" defaultValue={expense?.dataPagamento ?? ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" />
-        </div>
-        <div>
-          <label className="mb-2 block text-sm font-medium">Status</label>
-          <select name="status" defaultValue={expense?.status ?? "pendente"} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent">
-            <option value="pendente">Pendente</option>
-            <option value="paga">Paga</option>
-          </select>
-        </div>
-      </div>
-
       <div>
         <label className="mb-2 block text-sm font-medium">Categoria</label>
         <select name="categoriaId" defaultValue={expense?.categoriaId ?? ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" required>
@@ -76,6 +49,18 @@ export function ExpenseForm({ expense, categorias, tags, cartoes, action }: Expe
             <option key={categoria.id} value={categoria.id}>{categoria.nome}</option>
           ))}
         </select>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <div>
+          <label className="mb-2 block text-sm font-medium">Valor</label>
+          <MoneyInput name="valor" defaultValue={expense?.valor ?? ""} required />
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-medium">Data de vencimento</label>
+          <input type="date" name="dataVencimento" defaultValue={expense?.dataVencimento ?? ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" required />
+        </div>
       </div>
 
       <div>
