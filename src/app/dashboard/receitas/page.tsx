@@ -3,6 +3,7 @@ import Link from "next/link";
 import { deleteReceita, saveReceita } from "@/app/dashboard/finance-actions";
 import { DashboardListPanel } from "@/components/dashboard/dashboard-list-panel";
 import { DashboardPeriodHeader } from "@/components/dashboard/dashboard-period-header";
+import { ManagedForm } from "@/components/dashboard/managed-form";
 import { MoneyInput } from "@/components/dashboard/money-input";
 import { requireCurrentUser } from "@/lib/auth";
 import {
@@ -82,7 +83,7 @@ export default async function ReceitasPage({ searchParams }: PageProps) {
             ) : null}
           </div>
 
-          <form action={saveReceita} className="mt-6 space-y-4">
+          <ManagedForm action={saveReceita} className="mt-6 space-y-4" submitLabel={receitaEmEdicao ? "Salvar alteracoes" : "Cadastrar receita"} pendingLabel={receitaEmEdicao ? "Salvando receita..." : "Cadastrando receita..."}>
             <input type="hidden" name="id" value={receitaEmEdicao?.id ?? ""} />
 
             <div>
@@ -133,11 +134,7 @@ export default async function ReceitasPage({ searchParams }: PageProps) {
               <label className="mb-2 block text-sm font-medium">Observacoes</label>
               <textarea name="observacoes" defaultValue={receitaEmEdicao?.observacoes ?? ""} className="min-h-28 w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" />
             </div>
-
-            <button className="w-full rounded-2xl bg-accent px-4 py-3 text-sm font-semibold text-white transition hover:bg-accent-strong">
-              {receitaEmEdicao ? "Salvar alteracoes" : "Cadastrar receita"}
-            </button>
-          </form>
+        </ManagedForm>
         </article>
 
         <DashboardListPanel title="Receitas cadastradas" totalLabel={formatCurrency(totalReceitas)}>

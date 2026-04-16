@@ -15,8 +15,17 @@ export function SignUpForm() {
   return (
     <form
       action={formAction}
-      className="space-y-5 rounded-[2rem] border border-white/70 bg-white/88 px-6 py-7 shadow-[0_26px_80px_rgba(15,23,42,0.14)] backdrop-blur"
+      className="relative space-y-5 rounded-[2rem] border border-white/70 bg-white/88 px-6 py-7 shadow-[0_26px_80px_rgba(15,23,42,0.14)] backdrop-blur"
     >
+      {isPending ? (
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[2rem] bg-slate-950/18 backdrop-blur-[2px]">
+          <div className="flex items-center gap-3 rounded-full bg-white px-5 py-3 text-sm font-semibold text-slate-900 shadow-lg">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600" />
+            Criando cadastro...
+          </div>
+        </div>
+      ) : null}
+
       <div>
         <p className="text-xs uppercase tracking-[0.24em] text-blue-700">Cadastro</p>
         <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Criar novo acesso</h2>
