@@ -159,6 +159,12 @@ export default async function RelatoriosPage({ searchParams }: PageProps) {
         : `${selectedCategoryNames.length} categorias`;
   const selectedUsuarioName = selectedUsuarioId ? usuarios.find((item) => item.id === selectedUsuarioId)?.pessoa.nomeCompleto ?? null : null;
   const uniqueUsers = [...new Set(despesas.map((despesa) => despesa.usuario.pessoa.nomeCompleto))];
+  const printParams = new URLSearchParams();
+  printParams.set("months", selectedMonths.join(","));
+  if (params?.tagId) printParams.set("tagId", params.tagId);
+  if (params?.categoriaIds) printParams.set("categoriaIds", params.categoriaIds);
+  if (params?.usuarioId) printParams.set("usuarioId", params.usuarioId);
+  const printHref = `/relatorios/imprimir?${printParams.toString()}`;
 
   return (
     <section className="grid gap-4">
@@ -184,12 +190,22 @@ export default async function RelatoriosPage({ searchParams }: PageProps) {
             <h2 className="mt-2 text-2xl font-semibold">Refine as despesas compartilhadas</h2>
             <p className="mt-2 text-sm text-muted">As despesas listadas aqui respeitam as categorias vinculadas ao seu usuario e podem trazer lancamentos feitos por outros usuarios da mesma categoria.</p>
           </div>
-          <Link
-            className="rounded-full border border-border px-4 py-2 text-sm font-medium transition hover:bg-surface-strong"
-            href={`/dashboard/relatorios?months=${selectedMonths.join(",")}`}
-          >
-            Limpar filtros
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              className="rounded-full border border-slate-900 px-4 py-2 text-sm font-medium text-slate-900 transition hover:bg-slate-900 hover:text-white"
+              href={printHref}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Imprimir
+            </Link>
+            <Link
+              className="rounded-full border border-border px-4 py-2 text-sm font-medium transition hover:bg-surface-strong"
+              href={`/dashboard/relatorios?months=${selectedMonths.join(",")}`}
+            >
+              Limpar filtros
+            </Link>
+          </div>
         </div>
 
         <form className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-[1fr_1.25fr_1fr_auto]" method="get">
