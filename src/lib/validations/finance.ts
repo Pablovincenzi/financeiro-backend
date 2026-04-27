@@ -39,7 +39,6 @@ export const despesaSchema = z
     descricao: z.string().trim().min(3).max(150),
     valor: currencyString,
     dataVencimento: dateString("Informe a data de vencimento."),
-    dataPagamento: z.string().optional().or(z.literal("")),
     categoriaId: z.coerce.number().int().positive("Selecione uma categoria."),
     tagId: requiredTag,
     formaPagamento: z.enum(["a_vista", "a_prazo"], "Selecione a forma de pagamento."),
@@ -47,7 +46,6 @@ export const despesaSchema = z
     cartaoId: z.string().trim().nullish().or(z.literal("")),
     quantidadeParcelas: parcelasSchema,
     observacoes: optionalText,
-    status: z.enum(["pendente", "paga"]).default("pendente"),
   })
   .superRefine((data, ctx) => {
     if (data.formaPagamento === "a_vista" && !data.meioPagamento) {

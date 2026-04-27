@@ -9,6 +9,7 @@ import {
   buildRecentMonthOptions,
   formatCurrency,
   formatDate,
+  formatPaymentMethodLabel,
   formatSelectedMonthsSummary,
   parseSelectedMonths,
 } from "@/lib/format";
@@ -63,7 +64,7 @@ function parseSelectedNumericIds(value?: string) {
 }
 
 type PageProps = {
-  searchParams?: Promise<{ months?: string; tagId?: string; categoriaIds?: string; usuarioId?: string }>;
+  searchParams?: Promise<{ months?: string; tagId?: string; categoriaIds?: string; usuarioId?: string; formaPagamento?: string }>;
 };
 
 export default async function RelatoriosPage({ searchParams }: PageProps) {
@@ -76,6 +77,8 @@ export default async function RelatoriosPage({ searchParams }: PageProps) {
   const selectedTagId = params?.tagId ? Number(params.tagId) : null;
   const selectedCategoriaIds = parseSelectedNumericIds(params?.categoriaIds);
   const selectedUsuarioId = params?.usuarioId ? Number(params.usuarioId) : null;
+  const selectedFormaPagamento =
+    params?.formaPagamento === "a_vista" || params?.formaPagamento === "a_prazo" ? params.formaPagamento : null;
 
   const accessibleCategoryWhere = {
     usuarios: {
@@ -91,6 +94,7 @@ export default async function RelatoriosPage({ searchParams }: PageProps) {
     ...(selectedTagId ? { tagId: selectedTagId } : {}),
     ...(selectedCategoriaIds.length > 0 ? { categoriaDespesaId: { in: selectedCategoriaIds } } : {}),
     ...(selectedUsuarioId ? { usuarioId: selectedUsuarioId } : {}),
+    ...(selectedFormaPagamento ? { formaPagamento: selectedFormaPagamento } : {}),
   };
 
   const [receitas, despesas, pix, recebiveis, compras, contasFixas, faturas, categorias, rawTags, usuarios] = await Promise.all([
@@ -169,7 +173,7 @@ export default async function RelatoriosPage({ searchParams }: PageProps) {
         pathname="/dashboard/relatorios"
         selectedMonths={selectedMonths}
         monthOptions={monthOptions}
-        extraParams={{ tagId: params?.tagId, categoriaIds: params?.categoriaIds, usuarioId: params?.usuarioId }}
+        extraParams={{ tagId: params?.tagId, categoriaIds: params?.categoriaIds, usuarioId: params?.usuarioId, formaPagamento: params?.formaPagamento }}
         metrics={[
           { label: "Entradas do periodo", value: formatCurrency(totalReceitas + totalPixRecebidos + totalRecebiveis), detail: "Receitas, PIX recebidos e recebiveis previstos." },
           { label: "Saidas do periodo", value: formatCurrency(totalDespesas + totalPixEnviados + totalCompras), detail: "Despesas compartilhadas por categoria, compras no cartao e PIX enviados." },
@@ -192,7 +196,7 @@ export default async function RelatoriosPage({ searchParams }: PageProps) {
           </Link>
         </div>
 
-        <form className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-[1fr_1.25fr_1fr_auto]" method="get">
+        <form className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-[1fr_1.25fr_1fr_1fr_auto]" method="get">
           <input type="hidden" name="months" value={selectedMonths.join(",")} />
           <div>
             <label className="mb-2 block text-sm font-medium">Tag</label>
@@ -222,6 +226,14 @@ export default async function RelatoriosPage({ searchParams }: PageProps) {
               ))}
             </select>
           </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium">Forma de pagamento</label>
+            <select name="formaPagamento" defaultValue={params?.formaPagamento ?? ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent">
+              <option value="">Todas</option>
+              <option value="a_vista">A vista</option>
+              <option value="a_prazo">A prazo</option>
+            </select>
+          </div>
           <button className="rounded-2xl bg-accent px-5 py-3 text-sm font-semibold text-white transition hover:bg-accent-strong md:self-end">
             Aplicar filtros
           </button>
@@ -231,6 +243,7 @@ export default async function RelatoriosPage({ searchParams }: PageProps) {
           <span className="rounded-full bg-surface-strong px-3 py-1">Tag: {selectedTagName ?? "Todas"}</span>
           <span className="rounded-full bg-surface-strong px-3 py-1">Categorias: {selectedCategorySummary}</span>
           <span className="rounded-full bg-surface-strong px-3 py-1">Usuario: {selectedUsuarioName ?? "Todos"}</span>
+          <span className="rounded-full bg-surface-strong px-3 py-1">Forma de pagamento: {formatPaymentMethodLabel(selectedFormaPagamento)}</span>
           <span className="rounded-full bg-surface-strong px-3 py-1">Despesas encontradas: {despesas.length}</span>
           <span className="rounded-full bg-surface-strong px-3 py-1">Usuarios no recorte: {uniqueUsers.length}</span>
         </div>
@@ -338,6 +351,16 @@ export default async function RelatoriosPage({ searchParams }: PageProps) {
         </div>
       </article>
 
+      <div className="flex justify-end">
+        <Link
+          className="rounded-full border border-border px-4 py-2 text-sm font-medium transition hover:bg-surface-strong"
+          href={`/relatorios/imprimir?months=${selectedMonths.join(",")}${params?.tagId ? `&tagId=${params.tagId}` : ""}${params?.categoriaIds ? `&categoriaIds=${params.categoriaIds}` : ""}${params?.usuarioId ? `&usuarioId=${params.usuarioId}` : ""}${params?.formaPagamento ? `&formaPagamento=${params.formaPagamento}` : ""}`}
+          target="_blank"
+        >
+          Imprimir
+        </Link>
+      </div>
+
       <DashboardListPanel title="Despesas detalhadas por categoria" totalLabel={formatCurrency(totalDespesas)}>
         {despesas.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-sm text-muted">Nenhuma despesa encontrada com os filtros atuais.</p>
@@ -351,8 +374,7 @@ export default async function RelatoriosPage({ searchParams }: PageProps) {
                     Usuario: {despesa.usuario.pessoa.nomeCompleto} | Categoria: {despesa.categoriaDespesa.nome} | Tag: {despesa.tag?.nome ?? "Sem tag"}
                   </p>
                   <p className="mt-1 text-sm text-muted">
-                    Vencimento em {formatDate(despesa.dataVencimento)} | Status: {despesa.status}
-                    {despesa.dataPagamento ? ` | Pago em ${formatDate(despesa.dataPagamento)}` : ""}
+                    Vencimento em {formatDate(despesa.dataVencimento)} | Forma de pagamento: {formatPaymentMethodLabel(despesa.formaPagamento)}
                   </p>
                   {despesa.observacoes ? <p className="mt-2 text-sm text-muted">{despesa.observacoes}</p> : null}
                 </div>

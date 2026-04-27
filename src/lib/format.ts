@@ -111,6 +111,14 @@ export function formatSelectedMonthsSummary(values: string[]) {
   return `${formatMonthLabel(values[0])} + ${values.length - 1} meses`;
 }
 
+export function formatPaymentMethodLabel(value: string | null | undefined) {
+  if (value === "a_prazo") {
+    return "A prazo";
+  }
+
+  return "A vista";
+}
+
 export function buildMonthSelectionHref(
   pathname: string,
   selectedMonths: string[],
