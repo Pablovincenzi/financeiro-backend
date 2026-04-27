@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { DashboardListPanel } from "@/components/dashboard/dashboard-list-panel";
 import { DashboardPeriodHeader } from "@/components/dashboard/dashboard-period-header";
+import { ExpenseTagPieChart } from "@/components/dashboard/expense-tag-pie-chart";
 import { FilterMultiSelect } from "@/components/dashboard/filter-multi-select";
 import { requireCurrentUser } from "@/lib/auth";
 import {
@@ -140,6 +141,7 @@ export default async function RelatoriosPage({ searchParams }: PageProps) {
   const tags = getUniqueTags(rawTags);
   const receitasPorTag = groupByCategory(receitas.map((item) => ({ ...item, categoriaLabel: item.tag?.nome ?? "Sem tag" })));
   const despesasPorCategoria = groupByCategory(despesas.map((item) => ({ ...item, categoriaLabel: item.categoriaDespesa.nome })));
+  const despesasPorTag = groupByCategory(despesas.map((item) => ({ ...item, categoriaLabel: item.tag?.nome ?? "Sem tag" })));
   const despesasPorUsuario = groupByUser(despesas);
   const pixRecebidos = pix.filter((item) => item.tipo === "recebido");
   const pixEnviados = pix.filter((item) => item.tipo === "enviado");
@@ -289,6 +291,8 @@ export default async function RelatoriosPage({ searchParams }: PageProps) {
           </div>
         </article>
       </div>
+
+      <ExpenseTagPieChart data={despesasPorTag} total={totalDespesas} />
 
       <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
         <article className="rounded-[1.75rem] border border-border bg-surface px-6 py-6">
