@@ -4,6 +4,7 @@ import { deleteFatura, saveFatura } from "@/app/dashboard/finance-actions";
 import { DashboardListPanel } from "@/components/dashboard/dashboard-list-panel";
 import { DashboardPeriodHeader } from "@/components/dashboard/dashboard-period-header";
 import { MoneyInput } from "@/components/dashboard/money-input";
+import { ManagedForm } from "@/components/dashboard/managed-form";
 import { requireCurrentUser } from "@/lib/auth";
 import {
   buildMonthRanges,
@@ -73,7 +74,7 @@ export default async function FaturasPage({ searchParams }: PageProps) {
             {faturaEmEdicao ? <Link className="text-sm font-medium text-accent" href={`/dashboard/faturas?months=${selectedMonths.join(",")}`}>Cancelar edicao</Link> : null}
           </div>
 
-          <form action={saveFatura} className="mt-6 space-y-4">
+          <ManagedForm action={saveFatura} className="mt-6 space-y-4" submitLabel={faturaEmEdicao ? "Salvar alteracoes" : "Cadastrar fatura"} pendingLabel={faturaEmEdicao ? "Salvando fatura..." : "Cadastrando fatura..."}>
             <input type="hidden" name="id" value={faturaEmEdicao?.id ?? ""} />
             <div className="grid gap-4 md:grid-cols-2">
               <div>
@@ -116,8 +117,7 @@ export default async function FaturasPage({ searchParams }: PageProps) {
                 </select>
               </div>
             </div>
-            <button className="w-full rounded-2xl bg-accent px-4 py-3 text-sm font-semibold text-white transition hover:bg-accent-strong">{faturaEmEdicao ? "Salvar alteracoes" : "Cadastrar fatura"}</button>
-          </form>
+        </ManagedForm>
         </article>
 
         <DashboardListPanel title="Faturas cadastradas" totalLabel={formatCurrency(totalFaturas)}>

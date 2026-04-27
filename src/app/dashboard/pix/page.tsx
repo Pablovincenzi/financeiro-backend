@@ -4,6 +4,7 @@ import { deletePix, savePix } from "@/app/dashboard/finance-actions";
 import { DashboardListPanel } from "@/components/dashboard/dashboard-list-panel";
 import { DashboardPeriodHeader } from "@/components/dashboard/dashboard-period-header";
 import { MoneyInput } from "@/components/dashboard/money-input";
+import { ManagedForm } from "@/components/dashboard/managed-form";
 import { requireCurrentUser } from "@/lib/auth";
 import {
   buildMonthRanges,
@@ -70,7 +71,7 @@ export default async function PixPage({ searchParams }: PageProps) {
             {pixEmEdicao ? <Link className="text-sm font-medium text-accent" href={`/dashboard/pix?months=${selectedMonths.join(",")}`}>Cancelar edicao</Link> : null}
           </div>
 
-          <form action={savePix} className="mt-6 space-y-4">
+          <ManagedForm action={savePix} className="mt-6 space-y-4" submitLabel={pixEmEdicao ? "Salvar alteracoes" : "Cadastrar PIX"} pendingLabel={pixEmEdicao ? "Salvando PIX..." : "Cadastrando PIX..."}>
             <input type="hidden" name="id" value={pixEmEdicao?.id ?? ""} />
             <div className="grid gap-4 md:grid-cols-2">
               <div>
@@ -107,8 +108,7 @@ export default async function PixPage({ searchParams }: PageProps) {
               <label className="mb-2 block text-sm font-medium">Observacoes</label>
               <textarea name="observacoes" defaultValue={pixEmEdicao?.observacoes ?? ""} className="min-h-28 w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" />
             </div>
-            <button className="w-full rounded-2xl bg-accent px-4 py-3 text-sm font-semibold text-white transition hover:bg-accent-strong">{pixEmEdicao ? "Salvar alteracoes" : "Cadastrar PIX"}</button>
-          </form>
+        </ManagedForm>
         </article>
 
         <DashboardListPanel title="Transacoes PIX" totalLabel={formatCurrency(totalMovimentado)}>

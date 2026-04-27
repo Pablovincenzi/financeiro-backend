@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireCurrentUser } from "@/lib/auth";
@@ -48,6 +49,16 @@ function parseRequiredId(formData: FormData) {
   return idSchema.parse(formData.get("id"));
 }
 
+function getRedirectTarget(formData: FormData, fallbackPath: string) {
+  const redirectTo = formData.get("redirectTo");
+
+  if (typeof redirectTo === "string" && redirectTo.trim()) {
+    return redirectTo.trim();
+  }
+
+  return fallbackPath;
+}
+
 function revalidateAllPages() {
   [
     "/dashboard",
@@ -74,6 +85,7 @@ async function ensureTagExists(tagId: number) {
 
 export async function saveReceita(formData: FormData) {
   const { userId } = await requireCurrentUser();
+  const redirectTo = getRedirectTarget(formData, "/dashboard/receitas");
   const parsed = receitaSchema.parse({
     id: formData.get("id") || undefined,
     descricao: formData.get("descricao"),
@@ -82,7 +94,6 @@ export async function saveReceita(formData: FormData) {
     tagId: formData.get("tagId"),
     quantidadeParcelas: formData.get("quantidadeParcelas"),
     observacoes: formData.get("observacoes"),
-    status: formData.get("status"),
   });
 
   await ensureTagExists(parsed.tagId);
@@ -94,7 +105,7 @@ export async function saveReceita(formData: FormData) {
     valor: parseCurrencyToNumber(parsed.valor),
     tagId: parsed.tagId,
     observacoes: emptyToNull(parsed.observacoes),
-    status: parsed.status,
+    status: "prevista",
   };
 
   if (parsed.id) {
@@ -112,6 +123,7 @@ export async function saveReceita(formData: FormData) {
   }
 
   revalidateAllPages();
+  redirect(redirectTo);
 }
 
 export async function deleteReceita(formData: FormData) {
@@ -123,6 +135,7 @@ export async function deleteReceita(formData: FormData) {
 
 export async function saveCategoriaDespesa(formData: FormData) {
   await requireCurrentUser();
+  const redirectTo = getRedirectTarget(formData, "/dashboard/categorias");
   const parsed = categoriaDespesaSchema.parse({
     id: formData.get("id") || undefined,
     nome: formData.get("nome"),
@@ -174,6 +187,7 @@ export async function saveCategoriaDespesa(formData: FormData) {
   }
 
   revalidateAllPages();
+  redirect(redirectTo);
 }
 
 export async function deleteCategoriaDespesa(formData: FormData) {
@@ -192,6 +206,7 @@ export async function deleteCategoriaDespesa(formData: FormData) {
 
 export async function saveDespesa(formData: FormData) {
   const { userId } = await requireCurrentUser();
+  const redirectTo = getRedirectTarget(formData, "/dashboard/despesas");
   const parsed = despesaSchema.parse({
     id: formData.get("id") || undefined,
     descricao: formData.get("descricao"),
@@ -271,6 +286,7 @@ export async function saveDespesa(formData: FormData) {
   }
 
   revalidateAllPages();
+  redirect(redirectTo);
 }
 
 export async function deleteDespesa(formData: FormData) {
@@ -282,6 +298,7 @@ export async function deleteDespesa(formData: FormData) {
 
 export async function saveContaFixa(formData: FormData) {
   const { userId } = await requireCurrentUser();
+  const redirectTo = getRedirectTarget(formData, "/dashboard/contas-fixas");
   const parsed = contaFixaSchema.parse({
     id: formData.get("id") || undefined,
     descricao: formData.get("descricao"),
@@ -313,6 +330,7 @@ export async function saveContaFixa(formData: FormData) {
   }
 
   revalidateAllPages();
+  redirect(redirectTo);
 }
 
 export async function deleteContaFixa(formData: FormData) {
@@ -324,6 +342,7 @@ export async function deleteContaFixa(formData: FormData) {
 
 export async function saveCartao(formData: FormData) {
   const { userId } = await requireCurrentUser();
+  const redirectTo = getRedirectTarget(formData, "/dashboard/cartoes");
   const parsed = cartaoSchema.parse({
     id: formData.get("id") || undefined,
     nome: formData.get("nome"),
@@ -355,6 +374,7 @@ export async function saveCartao(formData: FormData) {
   }
 
   revalidateAllPages();
+  redirect(redirectTo);
 }
 
 export async function deleteCartao(formData: FormData) {
@@ -366,6 +386,7 @@ export async function deleteCartao(formData: FormData) {
 
 export async function saveFatura(formData: FormData) {
   const { userId } = await requireCurrentUser();
+  const redirectTo = getRedirectTarget(formData, "/dashboard/faturas");
   const parsed = faturaSchema.parse({
     id: formData.get("id") || undefined,
     cartaoId: formData.get("cartaoId"),
@@ -402,6 +423,7 @@ export async function saveFatura(formData: FormData) {
   }
 
   revalidateAllPages();
+  redirect(redirectTo);
 }
 
 export async function deleteFatura(formData: FormData) {
@@ -413,6 +435,7 @@ export async function deleteFatura(formData: FormData) {
 
 export async function saveCompraCartao(formData: FormData) {
   const { userId } = await requireCurrentUser();
+  const redirectTo = getRedirectTarget(formData, "/dashboard/compras-cartao");
   const parsed = compraCartaoSchema.parse({
     id: formData.get("id") || undefined,
     cartaoId: formData.get("cartaoId"),
@@ -444,6 +467,7 @@ export async function saveCompraCartao(formData: FormData) {
   }
 
   revalidateAllPages();
+  redirect(redirectTo);
 }
 
 export async function deleteCompraCartao(formData: FormData) {
@@ -455,6 +479,7 @@ export async function deleteCompraCartao(formData: FormData) {
 
 export async function savePix(formData: FormData) {
   const { userId } = await requireCurrentUser();
+  const redirectTo = getRedirectTarget(formData, "/dashboard/pix");
   const parsed = pixSchema.parse({
     id: formData.get("id") || undefined,
     tipo: formData.get("tipo"),
@@ -484,6 +509,7 @@ export async function savePix(formData: FormData) {
   }
 
   revalidateAllPages();
+  redirect(redirectTo);
 }
 
 export async function deletePix(formData: FormData) {
@@ -495,6 +521,7 @@ export async function deletePix(formData: FormData) {
 
 export async function saveRecebivel(formData: FormData) {
   const { userId } = await requireCurrentUser();
+  const redirectTo = getRedirectTarget(formData, "/dashboard/recebiveis");
   const parsed = recebivelSchema.parse({
     id: formData.get("id") || undefined,
     descricao: formData.get("descricao"),
@@ -526,6 +553,7 @@ export async function saveRecebivel(formData: FormData) {
   }
 
   revalidateAllPages();
+  redirect(redirectTo);
 }
 
 export async function deleteRecebivel(formData: FormData) {
@@ -534,3 +562,4 @@ export async function deleteRecebivel(formData: FormData) {
   await prisma.recebivel.deleteMany({ where: { id, usuarioId: userId } });
   revalidateAllPages();
 }
+

@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { deleteCartao, saveCartao } from "@/app/dashboard/finance-actions";
 import { MoneyInput } from "@/components/dashboard/money-input";
+import { ManagedForm } from "@/components/dashboard/managed-form";
 import { requireCurrentUser } from "@/lib/auth";
 import { formatCurrency } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
@@ -32,7 +33,7 @@ export default async function CartoesPage({ searchParams }: PageProps) {
           {cartaoEmEdicao ? <Link className="text-sm font-medium text-accent" href="/dashboard/cartoes">Cancelar edicao</Link> : null}
         </div>
 
-        <form action={saveCartao} className="mt-6 space-y-4">
+        <ManagedForm action={saveCartao} className="mt-6 space-y-4" submitLabel={cartaoEmEdicao ? "Salvar alteracoes" : "Cadastrar cartao"} pendingLabel={cartaoEmEdicao ? "Salvando cartao..." : "Cadastrando cartao..."}>
           <input type="hidden" name="id" value={cartaoEmEdicao?.id ?? ""} />
           <div>
             <label className="mb-2 block text-sm font-medium">Nome do cartao</label>
@@ -75,10 +76,7 @@ export default async function CartoesPage({ searchParams }: PageProps) {
               <input type="number" min="1" max="31" name="diaVencimento" defaultValue={cartaoEmEdicao?.diaVencimento ?? ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" required />
             </div>
           </div>
-          <button className="w-full rounded-2xl bg-accent px-4 py-3 text-sm font-semibold text-white transition hover:bg-accent-strong">
-            {cartaoEmEdicao ? "Salvar alteracoes" : "Cadastrar cartao"}
-          </button>
-        </form>
+        </ManagedForm>
       </article>
 
       <article className="rounded-[1.75rem] border border-border bg-surface px-6 py-6">

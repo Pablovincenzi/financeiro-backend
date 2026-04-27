@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { deleteRecebivel, saveRecebivel } from "@/app/dashboard/finance-actions";
 import { MoneyInput } from "@/components/dashboard/money-input";
+import { ManagedForm } from "@/components/dashboard/managed-form";
 import { requireCurrentUser } from "@/lib/auth";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
@@ -32,7 +33,7 @@ export default async function RecebiveisPage({ searchParams }: PageProps) {
           {recebivelEmEdicao ? <Link className="text-sm font-medium text-accent" href="/dashboard/recebiveis">Cancelar edicao</Link> : null}
         </div>
 
-        <form action={saveRecebivel} className="mt-6 space-y-4">
+        <ManagedForm action={saveRecebivel} className="mt-6 space-y-4" submitLabel={recebivelEmEdicao ? "Salvar alteracoes" : "Cadastrar recebivel"} pendingLabel={recebivelEmEdicao ? "Salvando recebivel..." : "Cadastrando recebivel..."}>
           <input type="hidden" name="id" value={recebivelEmEdicao?.id ?? ""} />
           <div>
             <label className="mb-2 block text-sm font-medium">Descricao</label>
@@ -74,8 +75,7 @@ export default async function RecebiveisPage({ searchParams }: PageProps) {
             <label className="mb-2 block text-sm font-medium">Observacoes</label>
             <textarea name="observacoes" defaultValue={recebivelEmEdicao?.observacoes ?? ""} className="min-h-28 w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" />
           </div>
-          <button className="w-full rounded-2xl bg-accent px-4 py-3 text-sm font-semibold text-white transition hover:bg-accent-strong">{recebivelEmEdicao ? "Salvar alteracoes" : "Cadastrar recebivel"}</button>
-        </form>
+        </ManagedForm>
       </article>
 
       <article className="rounded-[1.75rem] border border-border bg-surface px-6 py-6">

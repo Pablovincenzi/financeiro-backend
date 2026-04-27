@@ -30,7 +30,6 @@ export const receitaSchema = z.object({
   tagId: requiredTag,
   quantidadeParcelas: parcelasSchema,
   observacoes: optionalText,
-  status: z.enum(["prevista", "recebida"]).default("prevista"),
 });
 
 export const despesaSchema = z

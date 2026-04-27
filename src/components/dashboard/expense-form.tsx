@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { ManagedForm } from "@/components/dashboard/managed-form";
 import { MoneyInput } from "@/components/dashboard/money-input";
 
 type Option = {
@@ -33,23 +34,17 @@ export function ExpenseForm({ expense, categorias, tags, cartoes, action }: Expe
   const isEditing = Boolean(expense?.id);
 
   return (
-    <form action={action} className="mt-6 space-y-4">
+    <ManagedForm
+      action={action}
+      className="mt-6 space-y-4"
+      submitLabel={expense?.id ? "Salvar alteracoes" : "Cadastrar despesa"}
+      pendingLabel={expense?.id ? "Salvando despesa..." : "Cadastrando despesa..."}
+    >
       <input type="hidden" name="id" value={expense?.id ?? ""} />
 
       <div>
         <label className="mb-2 block text-sm font-medium">Descricao</label>
         <input name="descricao" defaultValue={expense?.descricao ?? ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" required />
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <div>
-          <label className="mb-2 block text-sm font-medium">Valor</label>
-          <MoneyInput name="valor" defaultValue={expense?.valor ?? ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" placeholder="299,90" required />
-        </div>
-        <div>
-          <label className="mb-2 block text-sm font-medium">Data de vencimento</label>
-          <input type="date" name="dataVencimento" defaultValue={expense?.dataVencimento ?? ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" required />
-        </div>
       </div>
 
       <div>
@@ -60,6 +55,18 @@ export function ExpenseForm({ expense, categorias, tags, cartoes, action }: Expe
             <option key={categoria.id} value={categoria.id}>{categoria.nome}</option>
           ))}
         </select>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <div>
+          <label className="mb-2 block text-sm font-medium">Valor</label>
+          <MoneyInput name="valor" defaultValue={expense?.valor ?? ""} required />
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-medium">Data de vencimento</label>
+          <input type="date" name="dataVencimento" defaultValue={expense?.dataVencimento ?? ""} className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" required />
+        </div>
       </div>
 
       <div>
@@ -120,10 +127,6 @@ export function ExpenseForm({ expense, categorias, tags, cartoes, action }: Expe
         <label className="mb-2 block text-sm font-medium">Observacoes</label>
         <textarea name="observacoes" defaultValue={expense?.observacoes ?? ""} className="min-h-28 w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:border-accent" />
       </div>
-
-      <button className="w-full rounded-2xl bg-accent px-4 py-3 text-sm font-semibold text-white transition hover:bg-accent-strong">
-        {expense?.id ? "Salvar alteracoes" : "Cadastrar despesa"}
-      </button>
-    </form>
+    </ManagedForm>
   );
 }

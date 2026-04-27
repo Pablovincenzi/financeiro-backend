@@ -11,17 +11,6 @@ const roleLabel: Record<string, string> = {
   administrador: "Administrador",
 };
 
-const links = [
-  { href: "/dashboard", label: "Resumo", shortLabel: "RS" },
-  { href: "/dashboard/relatorios", label: "Relatorios", shortLabel: "RL" },
-  { href: "/dashboard/receitas", label: "Receitas", shortLabel: "RC" },
-  { href: "/dashboard/despesas", label: "Despesas", shortLabel: "DP" },
-  { href: "/dashboard/categorias", label: "Categorias", shortLabel: "CT" },
-  { href: "/dashboard/contas-fixas", label: "Contas fixas", shortLabel: "CF" },
-  { href: "/dashboard/cartoes", label: "Cartoes", shortLabel: "CR" },
-  { href: "/dashboard/faturas", label: "Faturas", shortLabel: "FT" },
-];
-
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const session = await getCurrentSession();
 
@@ -30,6 +19,20 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   }
 
   const nivelAcesso = session.user.nivelAcesso ?? "usuario";
+  const links = [
+    { href: "/dashboard", label: "Resumo" },
+    { href: "/dashboard/relatorios", label: "Relatorios" },
+    { href: "/dashboard/receitas", label: "Receitas" },
+    { href: "/dashboard/despesas", label: "Despesas" },
+    { href: "/dashboard/categorias", label: "Categorias" },
+    { href: "/dashboard/contas-fixas", label: "Contas fixas" },
+    { href: "/dashboard/cartoes", label: "Cartoes" },
+    { href: "/dashboard/faturas", label: "Faturas" },
+    { href: "/dashboard/perfil", label: "Meu perfil" },
+    ...(nivelAcesso === "administrador"
+      ? [{ href: "/dashboard/gerenciar-usuarios", label: "Gerenciar usuarios" }]
+      : []),
+  ];
 
   return (
     <div className="min-h-screen px-3 py-3 lg:px-4 lg:py-4">
